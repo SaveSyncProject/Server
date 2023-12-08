@@ -5,6 +5,12 @@ import java.io.IOException;
 
 public class Main_Server {
     public static void main(String[] args) {
+        // Chemin vers le keystore
+        System.setProperty("javax.net.ssl.keyStore", "./../../Certificats/monkeystore.p12");
+        // Mot de passe du keystore
+        System.setProperty("javax.net.ssl.keyStorePassword", "miaoumiaou");
+
+
         int port = 1234; // Port du serveur
         SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         try (SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(port)) {
