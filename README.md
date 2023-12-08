@@ -9,4 +9,5 @@
 ## Docker
 
 - Docker dans ce projet sera utilisé pour virtualisé le serveur est contient
-également un serveur LDAP pour la gestion des utilisateurs.
+également un serveur LDAP pour l'authentification des utilisateurs.
+

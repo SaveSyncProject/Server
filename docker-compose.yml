@@ -13,8 +13,23 @@ services:
       LDAP_READONLY_USER: true
       LDAP_READONLY_USER_USERNAME: "sysUser"
       LDAP_READONLY_USER_PASSWORD: "readOnlyPassword"
+      LDAP_TLS: "false"
+      LDAP_TLS_VERIFY_CLIENT: "never"
     ports:
       - "389:389"
     volumes:
       - ./data/ldap_data:/var/lib/ldap
       - ./data/ldap_config:/etc/ldap/slapd.d
+      - ./data/sample_users.ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom/sample_users.ldif
+
+  # Service phpldapadmin
+  phpldapadmin:
+    image: osixia/phpldapadmin
+    container_name: ldap_phpldapadmin_container
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: ldap-server
+      PHPLDAPADMIN_HTTPS: 0
+    ports:
+      - "6080:80"
+    depends_on:
+      - ldap-server

@@ -1,0 +1,13 @@
+dn: cn=Gaëtan Gonfiantini,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+cn: Gaëtan Gonfiantini
+sn: Gonfiantini
+givenName: Gaëtan
+mail: gaetan.gonfiantini@example.com
+
+dn: cn=Axel Frache,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+cn: Axel Frache
+sn: Frache
+givenName: Axel
+mail: axel.frache@example.com
