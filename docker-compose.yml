@@ -4,7 +4,11 @@ services:
 
   # Service LDAP
   ldap-server:
-    image: osixia/openldap
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM osixia/openldap
+        COPY ./data/samples.ldif /container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif
     container_name: ldap_server_container
     environment:
       LDAP_ORGANISATION: "CATS"
@@ -20,7 +24,7 @@ services:
     volumes:
       - ./data/ldap_data:/var/lib/ldap
       - ./data/ldap_config:/etc/ldap/slapd.d
-      - ./data/sample_users.ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom/sample_users.ldif
+
 
   # Service phpldapadmin
   phpldapadmin:
