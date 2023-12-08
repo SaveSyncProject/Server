@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+
+  # Service LDAP
+  ldap-server:
+    image: osixia/openldap
+    container_name: ldap_server_container
+    environment:
+      LDAP_ORGANISATION: "CATS"
+      LDAP_DOMAIN: "$DOMAINENIV2.$DOMAINENIV1"
+      LDAP_ADMIN_PASSWORD: "$LDAP_ADMIN_PASSWORD"
+      LDAP_READONLY_USER: true
+      LDAP_READONLY_USER_USERNAME: "sysUser"
+      LDAP_READONLY_USER_PASSWORD: "readOnlyPassword"
+    ports:
+      - "389:389"
+    volumes:
+      - ./data/ldap_data:/var/lib/ldap
+      - ./data/ldap_config:/etc/ldap/slapd.d
