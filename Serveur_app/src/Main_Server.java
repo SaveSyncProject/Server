@@ -1,18 +1,22 @@
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 
 public class Main_Server {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         // Chemin vers le keystore
-        System.setProperty("javax.net.ssl.keyStore", "./../../Certificats/monkeystore.p12");
+        System.setProperty("javax.net.ssl.keyStore", "../../Certificats/monkeystore.p12");
         // Mot de passe du keystore
         System.setProperty("javax.net.ssl.keyStorePassword", "miaoumiaou");
-
-
         int port = 1234; // Port du serveur
-        SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        SSLContext context = SSLContext.getInstance("TLSv1.2");
+        context.init(null, null, null);
+        SSLServerSocketFactory factory = context.getServerSocketFactory();
+
         try (SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(port)) {
             System.out.println("Serveur SSL démarré sur le port " + port);
             while (true) {

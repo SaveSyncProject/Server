@@ -8,7 +8,7 @@ services:
       context: .
       dockerfile_inline: |
         FROM osixia/openldap
-        COPY ./data/samples.ldif /container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif
+        COPY ./data/samples_users.ldif /container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif
     container_name: ldap_server_container
     environment:
       LDAP_ORGANISATION: "CATS"
