@@ -5,7 +5,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
 public class ClientHandler extends Thread {
-    private SSLSocket socket;
+    private final SSLSocket socket;
 
     public ClientHandler(SSLSocket socket) {
         this.socket = socket;
