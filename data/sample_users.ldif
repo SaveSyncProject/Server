@@ -8,6 +8,7 @@ objectClass: inetOrgPerson
 cn: Gaëtan Gonfiantini
 sn: Gonfiantini
 givenName: Gaëtan
+userPassword: gaga
 mail: gaetan.gonfiantini@example.com
 
 dn: cn=Axel Frache,ou=utilisateurs,dc=example,dc=org
@@ -15,4 +16,5 @@ objectClass: inetOrgPerson
 cn: Axel Frache
 sn: Frache
 givenName: Axel
+userPassword: axax
 mail: axel.frache@example.com
