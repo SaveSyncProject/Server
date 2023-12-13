@@ -4,32 +4,25 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
-public class ClientHandler extends Thread {
-    private final SSLSocket socket;
+class ClientHandler extends Thread {
+    private SSLSocket clientSocket;
 
     public ClientHandler(SSLSocket socket) {
-        this.socket = socket;
+        this.clientSocket = socket;
     }
 
     public void run() {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
 
-            String line;
-            while ((line = in.readLine()) != null) {
-                System.out.println("Message reçu du client : " + line);
-                out.println("Echo: " + line);
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) { // Lire les messages du client
+                System.out.println("Client dit: " + inputLine);
+                out.println("Echo: " + inputLine); // Répondre au client
             }
         } catch (IOException e) {
             System.out.println("Erreur lors de la communication avec le client: " + e.getMessage());
             e.printStackTrace();
-        } finally {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                System.out.println("Erreur lors de la fermeture de la socket: " + e.getMessage());
-                e.printStackTrace();
-            }
         }
     }
 }
