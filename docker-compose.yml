@@ -8,8 +8,10 @@ services:
       context: .
       dockerfile_inline: |
         FROM osixia/openldap
-        COPY ./data/samples_users.ldif /container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif
     container_name: ldap_server_container
+    command: --copy-service
+    restart: always
+
     environment:
       LDAP_ORGANISATION: "CATS"
       LDAP_DOMAIN: "$DOMAINENIV2.$DOMAINENIV1"
@@ -24,6 +26,7 @@ services:
     volumes:
       - ./data/ldap_data:/var/lib/ldap
       - ./data/ldap_config:/etc/ldap/slapd.d
+      - ./data/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom
 
 
   # Service phpldapadmin
