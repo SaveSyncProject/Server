@@ -28,7 +28,6 @@ services:
       - ./data/ldap_config:/etc/ldap/slapd.d
       - ./data/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom
 
-
   # Service phpldapadmin
   phpldapadmin:
     image: osixia/phpldapadmin

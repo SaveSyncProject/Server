@@ -2,8 +2,7 @@ dn: ou=utilisateurs,dc=example,dc=org
 objectClass: organizationalUnit
 ou: utilisateurs
 
-
-dn: cn=Gaëtan Gonfiantini,ou=utilisateurs,dc=example,dc=org
+dn: uid=ggonfiantini,ou=utilisateurs,dc=example,dc=org
 objectClass: inetOrgPerson
 uid: ggonfiantini
 cn: Gaëtan Gonfiantini
@@ -12,7 +11,7 @@ givenName: Gaëtan
 userPassword: gaga
 mail: gaetan.gonfiantini@example.com
 
-dn: cn=Axel Frache,ou=utilisateurs,dc=example,dc=org
+dn: uid=afrache,ou=utilisateurs,dc=example,dc=org
 objectClass: inetOrgPerson
 uid: afrache
 cn: Axel Frache

@@ -1,9 +1,4 @@
 package LDAP;
-import javax.naming.Context;
-import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import java.util.Hashtable;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
 
@@ -22,8 +17,8 @@ public class methodesLDAP {
     }
 
     public static void main(String[] args) {
-          methodesLDAP m = new methodesLDAP();
-          System.out.println(m.authenticateWithLDAP("ggonfiantini", "gaga"));
+        methodesLDAP m = new methodesLDAP();
+        // Utilisez l'identifiant uid pour la connexion
+        System.out.println(m.authenticateWithLDAP("ggonfiantini", "gaga"));
     }
-
 }
