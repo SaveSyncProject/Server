@@ -11,7 +11,16 @@
 - Docker dans ce projet sera utilisé pour virtualisé le serveur est contient
 également un serveur LDAP pour l'authentification des utilisateurs.
 
+
+
+
+
+
+
+
 ## Etapes suivies pour la sécurisation SSL (Côté serveur)
+
+Temporairement mis de côté car pas encore fonctionnel.
 
 # Etapne n°1 : Génération du certificat
 
