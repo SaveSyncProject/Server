@@ -18,31 +18,141 @@
 
 
 
-## Etapes suivies pour la sécurisation SSL (Côté serveur)
+## Étapes suivies pour la sécurisation SSL (Côté serveur)
 
 Temporairement mis de côté car pas encore fonctionnel.
 
-### Etapne n°1 : Génération du certificat
+### Étape n°1 : Création d'un Keystore
 
 - Générer un certificat auto-signé avec la commande suivante :
 
 ```bash
-openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certificate.pem
+keytool -genkey -alias myServerKey -keyalg RSA -keystore mySrvKeystore.jks -keysize 2048
 ```
-Certificat auto-signé donc à ne pas utiliser en production.
 
-### Etape n°2 : Importation du certificat dans le keystore
+Résultat de la commande
 
 ```bash
-keytool -import -alias server -file certificate.pem -keystore keystore.jks
+gonfiantinig@DESKTOP-PGLUUA7:/mnt/c/Users/Gaetan/OneDrive - umontpellier.fr/Cours IUT 3ème année/Semestre 5/Contuinité d
+e service/TD/TD3 - PRA/Application_Sauvegarde/Server/Server_app/resources/SSL/Serveur$ keytool -genkey -alias myServerKey -keyalg RSA -keystore mySrvKeystore.jks -keysize 2048
+Enter keystore password:
+Re-enter new password:
+They don't match. Try again
+Enter keystore password:
+Re-enter new password:
+Enter the distinguished name. Provide a single dot (.) to leave a sub-component empty or press ENTER to use the default value in braces.
+What is your first and last name?
+  [Unknown]:  Gaëtan Gonfiantini
+What is the name of your organizational unit?
+  [Unknown]:  IUT
+What is the name of your organization?
+  [Unknown]:  SaveUnit
+What is the name of your City or Locality?
+  [Unknown]:  Montpellier
+What is the name of your State or Province?
+  [Unknown]:  France
+What is the two-letter country code for this unit?
+  [Unknown]:  FR
+Is CN=Gaëtan Gonfiantini, OU=IUT, O=SaveUnit, L=Montpellier, ST=France, C=FR correct?
+  [no]:  YES
+
+Generating 2,048 bit RSA key pair and self-signed certificate (SHA384withRSA) with a validity of 90 days
+        for: CN=Gaëtan Gonfiantini, OU=IUT, O=SaveUnit, L=Montpellier, ST=France, C=FR
+gonfiantinig@DESKTOP-PGLUUA7:/mnt/c/Users/Gaetan/OneDrive - umontpellier.fr/Cours IUT 3ème année/Semestre 5/Contuinité d
+e service/TD/TD3 - PRA/Application_Sauvegarde/Server/Server_app/resources/SSL/Serveur$
 ```
 
-## Etapes suivies pour le client
+### Étape n°2 : Exporter le certificat public du serveur
 
-### Etape n°1 : Création d'un Trustore
+Cette commande génère un certificat
 
 ```bash
-keytool -import -file server.crt -alias server -keystore truststore.jks
+keytool -export -alias myServerKey -file server.cer -keystore mySrvKeystore.jks
 ```
+
+```bash
+gonfiantinig@DESKTOP-PGLUUA7:/mnt/c/Users/Gaetan/OneDrive - umontpellier.fr/Cours IUT 3ème année/Semestre 5/Contuinité de service/TD/TD3 - PRA/Application_Sauvegarde/Server/Server_app/resources/SSL/Serveur$ keytool -export -alias myServerKey -file server.cer -keystore mySrvKeystore.jks
+Enter keystore password:
+Certificate stored in file <server.cer>
+```
+
+### Étape 3 pour le Serveur : Configurer le Serveur pour Utiliser le Keystore
+
+ System.setProperty("javax.net.ssl.keyStore", "path/to/mySrvKeystore.jks");
+ System.setProperty("javax.net.ssl.keyStorePassword", "password");
+
+## Étapes suivies pour le client
+
+### Étape n°1 : Création d'un Keystore pour le client 
+
+```bash
+gonfiantinig@DESKTOP-PGLUUA7:/mnt/c/Users/Gaetan/OneDrive - umontpellier.fr/Cours IUT 3ème année/Semestre 5/Contuinité d
+e service/TD/TD3 - PRA/Application_Sauvegarde/Server/Server_app/resources/SSL/Client$ keytool -genkey -alias clientKey -keyalg RSA -keystore myClientKeystore.jks -keysize 2048
+Enter keystore password:
+Re-enter new password:
+Enter the distinguished name. Provide a single dot (.) to leave a sub-component empty or press ENTER to use the default value in braces.
+What is your first and last name?
+  [Unknown]:  Gaëtan Gonfiantini
+What is the name of your organizational unit?
+  [Unknown]:  IUT
+What is the name of your organization?
+  [Unknown]:  SaveUnit
+What is the name of your City or Locality?
+  [Unknown]:  Montpellier
+What is the name of your State or Province?
+  [Unknown]:  France
+What is the two-letter country code for this unit?
+  [Unknown]:  FR
+Is CN=Gaëtan Gonfiantini, OU=IUT, O=SaveUnit, L=Montpellier, ST=France, C=FR correct?
+  [no]:  YES
+
+Generating 2,048 bit RSA key pair and self-signed certificate (SHA384withRSA) with a validity of 90 days
+        for: CN=Gaëtan Gonfiantini, OU=IUT, O=SaveUnit, L=Montpellier, ST=France, C=FR
+gonfiantinig@DESKTOP-PGLUUA7:/mnt/c/Users/Gaetan/OneDrive - umontpellier.fr/Cours IUT 3ème année/Semestre 5/Contuinité d
+e service/TD/TD3 - PRA/Application_Sauvegarde/Server/Server_app/resources/SSL/Client$
+```
+
+
+
+### Etape n°2 : Importation du certificat dans le keystore du client
+
+Il est important que le keystore du client fasse confiance au certificat généré par le serveur
+
+Commande pour que le keystore du client fasse confiance au certificat du serveur
+```bash
+keytool -import -alias serverCert -file path/to/server.cer -keystore path/to/clientKeystore.jks
+```
+Résultat :
+
+```bash
+gonfiantinig@DESKTOP-PGLUUA7:/mnt/c/Users/Gaetan/OneDrive - umontpellier.fr/Cours IUT 3ème année/Semestre 5/Contuinité de service/TD/TD3 - PRA/Application_Sauvegarde/Server/Server_app/resources/SSL/Client$ keytool -import -alias serverCert -file server.cer -keystore myClientKeystore.jks
+Enter keystore password:
+Owner: CN=Gaëtan Gonfiantini, OU=IUT, O=SaveUnit, L=Montpellier, ST=France, C=FR
+Issuer: CN=Gaëtan Gonfiantini, OU=IUT, O=SaveUnit, L=Montpellier, ST=France, C=FR
+Serial number: 1694f4a077a64948
+Valid from: Thu Dec 14 11:56:30 CET 2023 until: Wed Mar 13 11:56:30 CET 2024
+Certificate fingerprints:
+         SHA1: A9:F4:7A:32:90:A1:29:3E:8A:C3:5D:45:28:78:3C:D7:83:C7:6F:BE
+         SHA256: 30:D1:E7:FD:B3:2C:F4:5C:3D:22:C3:A1:4A:1A:35:35:3B:F2:2C:53:00:18:D4:7A:04:B7:8B:F7:41:23:3E:4E
+Signature algorithm name: SHA384withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+
+Extensions:
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 4D D8 FC 81 32 44 F0 CC   A1 57 2C F5 D2 F5 4B EC  M...2D...W,...K.
+0010: 22 4A 82 20                                        "J.
+]
+]
+
+Trust this certificate? [no]:  YES
+Certificate was added to keystore
+gonfiantinig@DESKTOP-PGLUUA7:/mnt/c/Users/Gaetan/OneDrive - umontpellier.fr/Cours IUT 3ème année/Semestre 5/Contuinité de service/TD/TD3 - PRA/Application_Sauvegarde/Server/Server_app/resources/SSL/Client$
+```
+
+
 
 
