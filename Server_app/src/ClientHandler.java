@@ -5,13 +5,14 @@ import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
 import model.User;
 
-class ClientHandler extends Thread {
-    private Socket clientSocket;
+import javax.net.ssl.SSLSocket;
 
-    public ClientHandler(Socket socket) {
+class ClientHandler extends Thread {
+    private SSLSocket clientSocket;
+
+    public ClientHandler(SSLSocket socket) {
         this.clientSocket = socket;
     }
-
     /**
      * Méthode pour gérer la communication avec le client
      */

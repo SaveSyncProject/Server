@@ -2,19 +2,43 @@ package Client;
 
 import model.User;
 
+import javax.net.ssl.*;
 import java.io.*;
-import java.net.Socket;
+import java.net.URL;
+import java.security.KeyStore;
 import java.util.Scanner;
 
 public class Client {
-    public static void main(String[] args) {
-        // Adresse du serveur et port
+    public static void main(String[] args) throws Exception {
         String host = "localhost";
         int port = 1234;
 
-        try (Socket socket = new Socket(host, port);
-             ObjectOutputStream objectOut = new ObjectOutputStream(socket.getOutputStream());
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+        // Récupérer le chemin du fichier truststore.jks
+        URL truststoreResource = Client.class.getClassLoader().getResource("./SSL/Client/myClientKeystore.jks");
+        if (truststoreResource == null) {
+            throw new FileNotFoundException("Le fichier 'myClientKeystore.jks' est introuvable.");
+        }
+        String truststorePassword = "miaoumiaou"; // Remplacez par votre mot de passe de truststore
+
+        // Charger le truststore
+        KeyStore ts = KeyStore.getInstance("JKS");
+        ts.load(truststoreResource.openStream(), truststorePassword.toCharArray());
+
+        // Initialiser le TrustManagerFactory
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ts);
+
+        // Initialiser le SSLContext
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, tmf.getTrustManagers(), null);
+
+        // Créer le SSLSocket
+        SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+        SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(host, port);
+
+        // Communiquer avec le serveur
+        try (ObjectOutputStream objectOut = new ObjectOutputStream(sslSocket.getOutputStream());
+             BufferedReader in = new BufferedReader(new InputStreamReader(sslSocket.getInputStream()))) {
 
             Scanner scanner = new Scanner(System.in);
 
