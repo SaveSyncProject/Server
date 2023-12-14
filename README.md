@@ -4,7 +4,7 @@
 
 - Application Java avec le JDK OpenJDK 21.0.1
 - Projet Maven
-
+- Utilisation de socket classiquent
 
 ## Docker
 
@@ -22,7 +22,7 @@
 
 Temporairement mis de côté car pas encore fonctionnel.
 
-# Etapne n°1 : Génération du certificat
+### Etapne n°1 : Génération du certificat
 
 - Générer un certificat auto-signé avec la commande suivante :
 
@@ -31,7 +31,7 @@ openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certifi
 ```
 Certificat auto-signé donc à ne pas utiliser en production.
 
-# Etape n°2 : Importation du certificat dans le keystore
+### Etape n°2 : Importation du certificat dans le keystore
 
 ```bash
 keytool -import -alias server -file certificate.pem -keystore keystore.jks
@@ -39,7 +39,7 @@ keytool -import -alias server -file certificate.pem -keystore keystore.jks
 
 ## Etapes suivies pour le client
 
-# Etape n°1 : Création d'un Trustore
+### Etape n°1 : Création d'un Trustore
 
 ```bash
 keytool -import -file server.crt -alias server -keystore truststore.jks
