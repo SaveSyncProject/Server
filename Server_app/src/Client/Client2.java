@@ -20,11 +20,15 @@ public class Client2 {
             System.out.println("Connecté au serveur : " + socket.getInetAddress());
 
             String userInput;
-            while ((userInput = stdIn.readLine()) != null) {
-                out.println(userInput); // Envoyer au serveur
-                String response = in.readLine(); // Lire la réponse du serveur
-                System.out.println("Réponse du serveur: " + response);
+            String serverMessage;
+            while ((serverMessage = in.readLine()) != null) {
+                System.out.println("Réponse du serveur: " + serverMessage);
+                if (serverMessage.contains("Entrez votre nom d'utilisateur:") || serverMessage.contains("Entrez votre mot de passe:")) {
+                    userInput = stdIn.readLine();
+                    out.println(userInput);
+                }
             }
+
         } catch (IOException e) {
             System.out.println("Erreur lors de la connexion au serveur: " + e.getMessage());
             e.printStackTrace();

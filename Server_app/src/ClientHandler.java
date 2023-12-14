@@ -1,7 +1,4 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 
 import com.unboundid.ldap.sdk.LDAPConnection;
@@ -27,31 +24,29 @@ class ClientHandler extends Thread {
         }
     }
 
-    public static void main(String[] args){
-        System.out.println(authenticateWithLDAP("ggonfiantini", "gaga"));
-    }
-
-
     public void run() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
 
-            // Demander le nom d'utilisateur et le mot de passe
             out.println("Entrez votre nom d'utilisateur:");
             String username = in.readLine();
             out.println("Entrez votre mot de passe:");
             String password = in.readLine();
 
-            System.out.println("Authentification de l'utilisateur: " + username);
-
-            // Assurez-vous que l'utilisateur et le mot de passe sont reçus avant d'authentifier
             if (username != null && password != null) {
                 User user = new User(username, password);
 
-                // Authentifier l'utilisateur
                 if (authenticateWithLDAP(user.getUsername(), user.getPassword())) {
                     out.println("Authentification réussie");
                     System.out.println("Authentification réussie de l'utilisateur: " + username);
+
+                    // Vérifier si le dossier utilisateur existe, sinon le créer
+                    File userDirectory = new File("./SavesUsers/" + username);
+                    if (!userDirectory.exists()) {
+                        userDirectory.mkdirs();
+                        System.out.println("Dossier créé pour l'utilisateur: " + username);
+                    }
+
                     // Gérer la communication client après l'authentification
                     String inputLine;
                     while ((inputLine = in.readLine()) != null) {
@@ -69,5 +64,6 @@ class ClientHandler extends Thread {
             e.printStackTrace();
         }
     }
+
 
 }
