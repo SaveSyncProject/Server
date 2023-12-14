@@ -1,10 +1,10 @@
 package Client;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import model.User;
+
+import java.io.*;
 import java.net.Socket;
+import java.util.Scanner;
 
 public class Client {
     public static void main(String[] args) {
@@ -13,20 +13,22 @@ public class Client {
         int port = 1234;
 
         try (Socket socket = new Socket(host, port);
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in))) {
+             ObjectOutputStream objectOut = new ObjectOutputStream(socket.getOutputStream());
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-            System.out.println("Connecté au serveur : " + socket.getInetAddress());
+            Scanner scanner = new Scanner(System.in);
 
-            String userInput;
-            String serverMessage;
-            while ((serverMessage = in.readLine()) != null) {
-                System.out.println("Réponse du serveur: " + serverMessage);
-                if (serverMessage.contains("Entrez votre nom d'utilisateur:") || serverMessage.contains("Entrez votre mot de passe:")) {
-                    userInput = stdIn.readLine();
-                    out.println(userInput);
-                }
+            System.out.println("Entrez votre nom d'utilisateur:");
+            String username = scanner.nextLine();
+            System.out.println("Entrez votre mot de passe:");
+            String password = scanner.nextLine();
+
+            User user = new User(username, password);
+            objectOut.writeObject(user);
+
+            String response;
+            while ((response = in.readLine()) != null) {
+                System.out.println("Réponse du serveur: " + response);
             }
 
         } catch (IOException e) {
