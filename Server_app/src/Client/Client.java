@@ -1,7 +1,5 @@
 package Client;
-
 import model.User;
-
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.URL;

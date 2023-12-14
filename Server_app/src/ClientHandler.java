@@ -20,7 +20,7 @@ class ClientHandler extends Thread {
         try (ObjectInputStream objectIn = new ObjectInputStream(clientSocket.getInputStream());
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
 
-            User user = (User) objectIn.readObject(); // Lecture de l'objet User envoyé par le client
+            User user = (User) objectIn.readObject();
 
             if (user != null && authenticateWithLDAP(user.getUsername(), user.getPassword())) {
                 out.println("Authentification réussie");
