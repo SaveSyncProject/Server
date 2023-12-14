@@ -1,58 +1,103 @@
-import java.io.*;
-import java.net.Socket;
-
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
 import model.BackupDetails;
 import model.User;
 
-import java.io.File;
-import java.io.IOException;
+import javax.net.ssl.SSLSocket;
+import java.io.*;
+import java.net.Socket;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-
-import javax.net.ssl.SSLSocket;
+import java.util.Set;
 
 class ClientHandler extends Thread {
     private SSLSocket clientSocket;
+    private static final Set<String> activeUsers = Collections.synchronizedSet(new HashSet<>());
 
     public ClientHandler(SSLSocket socket) {
         this.clientSocket = socket;
     }
+
     /**
      * Méthode pour gérer la communication avec le client
      */
     public void run() {
+        User user = null;
         try (ObjectInputStream objectIn = new ObjectInputStream(clientSocket.getInputStream());
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
 
-            User user = (User) objectIn.readObject();
+            int attempts = 0;
+            boolean isAuthenticated = false;
 
-            if (user != null && authenticateWithLDAP(user.getUsername(), user.getPassword())) {
-                System.out.println("Authentification réussie pour l'utilisateur: " + user.getUsername());
+            while (attempts < 3 && !isAuthenticated) {
+                try {
+                    user = (User) objectIn.readObject();
 
-                out.println("Authentification réussie");
-                createUserDirectory(user.getUsername()); // Création du dossier de sauvegarde pour l'utilisateur si nécessaire
-                // Communication avec le client après authentification
-                Object receivedObject = objectIn.readObject();
-                if (receivedObject instanceof BackupDetails) {
-                    BackupDetails backupDetails = (BackupDetails) receivedObject;
-                    handleBackup(backupDetails, user.getUsername());
+                    if (user != null && authenticateWithLDAP(user.getUsername(), user.getPassword())) {
+                        synchronized (activeUsers) {
+                            if (activeUsers.contains(user.getUsername())) {
+                                out.println("Utilisateur déjà connecté.");
+                                System.out.println("Tentative de connexion refusée pour " + user.getUsername() + ": déjà connecté.");
+                                return;
+                            } else {
+                                activeUsers.add(user.getUsername());
+                            }
+                        }
+
+                        isAuthenticated = true;
+                        System.out.println("Authentification réussie pour l'utilisateur: " + user.getUsername());
+                        out.println("Authentification réussie");
+                        createUserDirectory(user.getUsername());
+
+                        while (true) {
+                            Object receivedObject = objectIn.readObject();
+                            if (receivedObject instanceof BackupDetails) {
+                                BackupDetails backupDetails = (BackupDetails) receivedObject;
+                                handleBackup(backupDetails, user.getUsername());
+                            } else if (receivedObject instanceof String && "END_CONNECTION".equals(receivedObject)) {
+                                System.out.println("Le client a demandé la fin de la connexion.");
+                                break; // Sortir de la boucle pour fermer la connexion
+                            }
+                        }
+                    } else {
+                        out.println("Authentification échouée. Veuillez réessayer.");
+                        attempts++;
+                    }
+                } catch (ClassNotFoundException e) {
+                    System.out.println("Classe User non trouvée lors de la désérialisation: " + e.getMessage());
+                    break;
                 }
-            } else {
-                out.println("Authentification échouée ou utilisateur invalide");
+            }
+
+            if (!isAuthenticated) {
+                out.println("Nombre maximum de tentatives atteint. Connexion fermée.");
+                System.out.println("Connexion fermée après plusieurs tentatives d'authentification infructueuses.");
             }
 
         } catch (IOException e) {
             System.out.println("Erreur lors de la communication avec le client: " + e.getMessage());
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            System.out.println("Classe User non trouvée lors de la désérialisation: " + e.getMessage());
+        } finally {
+            if (clientSocket != null && !clientSocket.isClosed()) {
+                try {
+                    clientSocket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (user != null) {
+                synchronized (activeUsers) {
+                    activeUsers.remove(user.getUsername());
+                    System.out.println("Utilisateur déconnecté: " + user.getUsername());
+                }
+            }
         }
     }
+
 
 
 
