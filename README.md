@@ -4,12 +4,30 @@
 
 - Application Java avec le JDK OpenJDK 21.0.1
 - Projet Maven
-- Utilisation de socket classiquent
+- Utilisation de socket SSL
+- Utilisation d'un annuaire LDAP pour l'authentification des utilisateurs
 
 ## Docker
 
-- Docker dans ce projet sera utilisé pour virtualisé le serveur est contient
+- Docker dans ce projet sera utilisé pour virtualiser le serveur et contient
 également un serveur LDAP pour l'authentification des utilisateurs.
+
+### Lancement de du docker 
+
+- Pour lancer le docker, il faut se placer dans le dossier "Server" et lancer la commande suivante :
+
+```bash
+docker-compose up -d
+```
+
+
+![dockerlancement.png](imgREADME%2Fdockerlancement.png)
+
+Un fichier de configuration est déja présent dans le LDAP pour avoir deux utilisateurs :
+
+- ggonfiantini
+- afrache
+
 
 
 
