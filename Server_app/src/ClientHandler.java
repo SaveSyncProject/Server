@@ -3,7 +3,16 @@ import java.net.Socket;
 
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
+import model.BackupDetails;
 import model.User;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import javax.net.ssl.SSLSocket;
 
@@ -23,15 +32,15 @@ class ClientHandler extends Thread {
             User user = (User) objectIn.readObject();
 
             if (user != null && authenticateWithLDAP(user.getUsername(), user.getPassword())) {
+                System.out.println("Authentification réussie pour l'utilisateur: " + user.getUsername());
+
                 out.println("Authentification réussie");
                 createUserDirectory(user.getUsername()); // Création du dossier de sauvegarde pour l'utilisateur si nécessaire
-
                 // Communication avec le client après authentification
-                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    System.out.println("Client dit: " + inputLine);
-                    out.println("Echo: " + inputLine);
+                Object receivedObject = objectIn.readObject();
+                if (receivedObject instanceof BackupDetails) {
+                    BackupDetails backupDetails = (BackupDetails) receivedObject;
+                    handleBackup(backupDetails, user.getUsername());
                 }
             } else {
                 out.println("Authentification échouée ou utilisateur invalide");
@@ -44,6 +53,7 @@ class ClientHandler extends Thread {
             System.out.println("Classe User non trouvée lors de la désérialisation: " + e.getMessage());
         }
     }
+
 
 
 
@@ -79,4 +89,75 @@ class ClientHandler extends Thread {
             }
         }
     }
+
+    private void handleBackup(BackupDetails backupDetails, String username) {
+        System.out.println("Démarrage de la sauvegarde pour l'utilisateur : " + username);
+        String directoryPath = backupDetails.getDirectoryPath();
+        List<String> extensions = backupDetails.getFileExtensions();
+
+        File backupRoot = new File("./SavesUsers/" + username);
+        if (!backupRoot.exists()) {
+            backupRoot.mkdirs();
+        }
+        HashMap<String, Long> lastModifiedMap = loadLastModifiedMap(backupRoot);
+        try {
+            Files.walkFileTree(Paths.get(directoryPath), new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) throws IOException {
+                    String fileName = filePath.getFileName().toString();
+                    if (extensions.stream().anyMatch(fileName::endsWith)) {
+                        String relativePath = backupRoot.toPath().resolve(directoryPath).relativize(filePath).toString();
+                        File backupFile = new File(backupRoot, relativePath);
+
+                        if (!lastModifiedMap.containsKey(relativePath) ||
+                                attrs.lastModifiedTime().toMillis() > lastModifiedMap.get(relativePath)) {
+                            backupFile(backupFile, filePath.toFile());
+                            lastModifiedMap.put(relativePath, attrs.lastModifiedTime().toMillis());
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+            saveLastModifiedMap(lastModifiedMap, backupRoot);
+        } catch (IOException e) {
+            System.err.println("Erreur lors de la lecture des fichiers: " + e.getMessage());
+        }
+    }
+
+    private void backupFile(File backupFile, File sourceFile) throws IOException {
+        System.out.println("Sauvegarde du fichier : " + sourceFile.getPath());
+        backupFile.getParentFile().mkdirs();
+        try (FileInputStream in = new FileInputStream(sourceFile);
+             FileOutputStream out = new FileOutputStream(backupFile)) {
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = in.read(buffer)) > 0) {
+                out.write(buffer, 0, length);
+            }
+        }
+    }
+
+    private HashMap<String, Long> loadLastModifiedMap(File backupRoot) {
+        File lastModifiedFile = new File(backupRoot, "lastModifiedMap.ser");
+        if (lastModifiedFile.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(lastModifiedFile))) {
+                return (HashMap<String, Long>) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                System.err.println("Erreur de sauvegarde : " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        return new HashMap<>();
+    }
+
+    private void saveLastModifiedMap(HashMap<String, Long> lastModifiedMap, File backupRoot) {
+        File lastModifiedFile = new File(backupRoot, "lastModifiedMap.ser");
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(lastModifiedFile))) {
+            oos.writeObject(lastModifiedMap);
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Gérer l'exception si nécessaire
+        }
+    }
+
 }

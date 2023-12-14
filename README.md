@@ -31,14 +31,7 @@ Un fichier de configuration est déja présent dans le LDAP pour avoir deux util
 
 
 
-
-
-
-
-
 ## Étapes suivies pour la sécurisation SSL (Côté serveur)
-
-Temporairement mis de côté car pas encore fonctionnel.
 
 ### Étape n°1 : Création d'un Keystore
 
@@ -94,12 +87,8 @@ Enter keystore password:
 Certificate stored in file <server.cer>
 ```
 
-### Étape 3 pour le Serveur : Configurer le Serveur pour Utiliser le Keystore
+## Étapes suivies pour la sécurisation SSL (Côté Client)
 
- System.setProperty("javax.net.ssl.keyStore", "path/to/mySrvKeystore.jks");
- System.setProperty("javax.net.ssl.keyStorePassword", "password");
-
-## Étapes suivies pour le client
 
 ### Étape n°1 : Création d'un Keystore pour le client 
 
@@ -132,7 +121,7 @@ e service/TD/TD3 - PRA/Application_Sauvegarde/Server/Server_app/resources/SSL/Cl
 
 
 
-### Etape n°2 : Importation du certificat dans le keystore du client
+### Étape n°2 : Importation du certificat dans le keystore du client
 
 Il est important que le keystore du client fasse confiance au certificat généré par le serveur
 
@@ -171,6 +160,8 @@ Certificate was added to keystore
 gonfiantinig@DESKTOP-PGLUUA7:/mnt/c/Users/Gaetan/OneDrive - umontpellier.fr/Cours IUT 3ème année/Semestre 5/Contuinité de service/TD/TD3 - PRA/Application_Sauvegarde/Server/Server_app/resources/SSL/Client$
 ```
 
+## Intégration du SSL dans le code
 
+Après toutes ces étapes effectuées, les keystores sont prêts à être utilisés dans le code.
 
 

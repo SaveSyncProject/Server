@@ -1,5 +1,6 @@
 import javax.net.ssl.*;
 import java.io.*;
+import java.net.InetAddress;
 import java.net.URL;
 import java.security.KeyStore;
 
@@ -30,7 +31,7 @@ public class Main_Server {
         SSLServerSocketFactory sslServerSocketFactory = sslContext.getServerSocketFactory();
         SSLServerSocket sslServerSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket(port);
 
-        System.out.println("Serveur SSL en écoute sur le port " + port);
+        System.out.println("Serveur SSL en écoute sur le port " + port + " et sur l'adresse " + InetAddress.getLocalHost().getHostAddress());
 
         while (true) {
             SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
