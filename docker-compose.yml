@@ -1,41 +1,54 @@
-version: '3'
-
 services:
 
-  # Service LDAP
-  ldap-server:
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM osixia/openldap
-    container_name: ldap_server_container
-    command: --copy-service
-    restart: always
-
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: openldap
     environment:
-      LDAP_ORGANISATION: "CATS"
-      LDAP_DOMAIN: "$DOMAINENIV2.$DOMAINENIV1"
-      LDAP_ADMIN_PASSWORD: "$LDAP_ADMIN_PASSWORD"
-      LDAP_READONLY_USER: true
-      LDAP_READONLY_USER_USERNAME: "sysUser"
-      LDAP_READONLY_USER_PASSWORD: "readOnlyPassword"
-      LDAP_TLS: "false"
-      LDAP_TLS_VERIFY_CLIENT: "never"
+      LDAP_LOG_LEVEL: "256"
+      LDAP_ORGANISATION: "Example Inc."
+      LDAP_DOMAIN: "example.org"
+      LDAP_ADMIN_PASSWORD: "admin"
+      LDAP_CONFIG_PASSWORD: "config"
+      LDAP_READONLY_USER: "false"
+      LDAP_RFC2307BIS_SCHEMA: "false"
+      LDAP_BACKEND: "mdb"
+      LDAP_TLS: "true"
+      LDAP_TLS_DH_PARAM_FILENAME: "dhparam.pem"
+      LDAP_TLS_CA_CRT_FILENAME: "ca.crt"
+      LDAP_TLS_ENFORCE: "false"
+      LDAP_TLS_CIPHER_SUITE: "SECURE256:-VERS-SSL3.0"
+      LDAP_TLS_VERIFY_CLIENT: "demand"
+      LDAP_REPLICATION: "false"
+      KEEP_EXISTING_CONFIG: "false"
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"
+      LDAP_SSL_HELPER_PREFIX: "ldap"
+    tty: true
+    stdin_open: true
+    volumes:
+      - /var/lib/ldap/
+      - /etc/ldap/slapd.d/
+      - /container/service/slapd/assets/certs/
+      - ./resources/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom
     ports:
       - "389:389"
-    volumes:
-      - ./data/ldap_data:/var/lib/ldap
-      - ./data/ldap_config:/etc/ldap/slapd.d
-      - ./data/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom
+      - "636:636"
+    domainname: "example.org"
+    hostname: "ldap-server"
+    networks:
+      - ldap-network
 
-  # Service phpldapadmin
   phpldapadmin:
-    image: osixia/phpldapadmin
-    container_name: ldap_phpldapadmin_container
+    image: osixia/phpldapadmin:latest
+    container_name: phpldapadmin
     environment:
-      PHPLDAPADMIN_LDAP_HOSTS: ldap-server
-      PHPLDAPADMIN_HTTPS: 0
+      PHPLDAPADMIN_LDAP_HOSTS: "openldap"
+      PHPLDAPADMIN_HTTPS: "false"
+    networks:
+      - ldap-network
     ports:
-      - "6080:80"
+      - "8082:80"
     depends_on:
-      - ldap-server
+      - openldap
+
+networks:
+  ldap-network:

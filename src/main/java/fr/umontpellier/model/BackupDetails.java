@@ -1,4 +1,4 @@
-package model;
+package fr.umontpellier.model;
 
 import java.io.Serializable;
 import java.util.List;

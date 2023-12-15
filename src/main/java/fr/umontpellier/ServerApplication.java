@@ -1,15 +1,17 @@
+package fr.umontpellier;
+
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.URL;
 import java.security.KeyStore;
 
-public class Main_Server {
+public class ServerApplication {
     public static void main(String[] args) throws Exception {
         int port = 1234;
 
         // Récupérer le chemin du fichier keystore.jks
-        URL keystoreResource = Main_Server.class.getClassLoader().getResource("./SSL/Serveur/mySrvKeystore.jks");
+        URL keystoreResource = ServerApplication.class.getClassLoader().getResource("ssl/server/mySrvKeystore.jks");
         if (keystoreResource == null) {
             throw new FileNotFoundException("Le fichier 'mySrvKeystore.jks' est introuvable.");
         }
@@ -35,7 +37,7 @@ public class Main_Server {
 
         while (true) {
             SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-            new ClientHandler(sslSocket).start(); // Assurez-vous que ClientHandler utilise SSLSocket
+            new ClientHandler(sslSocket).start(); // Assurez-vous que fr.umontpellier.ClientHandler utilise SSLSocket
         }
     }
 }

@@ -1,11 +1,12 @@
+package fr.umontpellier;
+
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
-import model.BackupDetails;
-import model.User;
+import fr.umontpellier.model.BackupDetails;
+import fr.umontpellier.model.User;
 
 import javax.net.ssl.SSLSocket;
 import java.io.*;
-import java.net.Socket;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
@@ -68,6 +69,7 @@ class ClientHandler extends Thread {
                         attempts++;
                     }
                 } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
                     System.out.println("Classe User non trouvée lors de la désérialisation: " + e.getMessage());
                     break;
                 }
@@ -98,20 +100,16 @@ class ClientHandler extends Thread {
         }
     }
 
-
-
-
-
     /**
      * Méthode pour authentifier un utilisateur avec LDAP
      * @param username
      * @param password
      * @return
      */
-    private static boolean authenticateWithLDAP(String username, String password) {
+    private boolean authenticateWithLDAP(String username, String password) {
         try {
             LDAPConnection connection = new LDAPConnection("localhost", 389);
-            connection.bind("uid=" + username + ",ou=utilisateurs,dc=example,dc=org", password);
+            connection.bind("uid=" + username + ",ou=users,dc=example,dc=org", password);
             connection.close();
             return true;
         } catch (LDAPException e) {
@@ -124,7 +122,7 @@ class ClientHandler extends Thread {
      * Méthode pour créer un dossier de sauvegarde pour un utilisateur si nécessaire
      */
     private static void createUserDirectory(String username) {
-        File userDirectory = new File("./SavesUsers/" + username);
+        File userDirectory = new File("./users/" + username);
         if (!userDirectory.exists()) {
             boolean isCreated = userDirectory.mkdirs();
             if (isCreated) {
@@ -140,7 +138,7 @@ class ClientHandler extends Thread {
         String directoryPath = backupDetails.getDirectoryPath();
         List<String> extensions = backupDetails.getFileExtensions();
 
-        File backupRoot = new File("./SavesUsers/" + username);
+        File backupRoot = new File("./users/" + username);
         if (!backupRoot.exists()) {
             backupRoot.mkdirs();
         }
