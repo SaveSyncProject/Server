@@ -1,5 +1,7 @@
 # Server
 
+Cette branche contient le serveur avec des sauvegardes ZIP
+
 ## Informations générales du projet
 
 - Application Java avec le JDK OpenJDK 21.0.1
