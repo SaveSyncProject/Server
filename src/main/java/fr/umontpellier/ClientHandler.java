@@ -51,7 +51,7 @@ class ClientHandler extends Thread {
 
                         isAuthenticated = true;
                         System.out.println("Authentification réussie pour l'utilisateur: " + user.getUsername());
-                        out.println("Authentification réussie");
+                        out.println("OK");
                         createUserDirectory(user.getUsername());
 
                         while (true) {
