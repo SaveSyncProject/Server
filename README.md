@@ -22,8 +22,7 @@ Cette branche contient le serveur avec des sauvegardes ZIP
 docker-compose up -d
 ```
 
-
-![dockerlancement.png](imgREADME%2Fdockerlancement.png)
+![./img/dockerlancement.png](C:\Users\axelf\Desktop\Server\src\main\resources\img\dockerlancement.png)
 
 Un fichier de configuration est déja présent dans le LDAP pour avoir deux utilisateurs :
 

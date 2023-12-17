@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 class ClientHandler extends Thread {
     private SSLSocket clientSocket;
@@ -142,30 +144,53 @@ class ClientHandler extends Thread {
         if (!backupRoot.exists()) {
             backupRoot.mkdirs();
         }
-        HashMap<String, Long> lastModifiedMap = loadLastModifiedMap(backupRoot);
-        try {
-            Files.walkFileTree(Paths.get(directoryPath), new SimpleFileVisitor<Path>() {
+
+        // Créer le fichier zip de sauvegarde
+        File zipFile = new File(backupRoot, "backup.zip");
+        try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(zipFile))) {
+            Set<Path> addedDirs = new HashSet<>();
+
+            Path startPath = Paths.get(directoryPath);
+            Files.walkFileTree(startPath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    // Créer une entrée zip pour chaque dossier
+                    Path relDir = startPath.relativize(dir);
+                    if (!relDir.toString().isEmpty() && addedDirs.add(relDir)) {
+                        ZipEntry dirEntry = new ZipEntry(relDir.toString() + "/");
+                        zipOut.putNextEntry(dirEntry);
+                        zipOut.closeEntry();
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
                 @Override
                 public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) throws IOException {
                     String fileName = filePath.getFileName().toString();
                     if (extensions.stream().anyMatch(fileName::endsWith)) {
-                        String relativePath = backupRoot.toPath().resolve(directoryPath).relativize(filePath).toString();
-                        File backupFile = new File(backupRoot, relativePath);
+                        // Créer une entrée zip pour le fichier
+                        String zipEntryName = startPath.relativize(filePath).toString();
+                        zipOut.putNextEntry(new ZipEntry(zipEntryName));
 
-                        if (!lastModifiedMap.containsKey(relativePath) ||
-                                attrs.lastModifiedTime().toMillis() > lastModifiedMap.get(relativePath)) {
-                            backupFile(backupFile, filePath.toFile());
-                            lastModifiedMap.put(relativePath, attrs.lastModifiedTime().toMillis());
+                        // Lire le contenu du fichier et l'écrire dans le zip
+                        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(filePath.toFile()))) {
+                            byte[] buffer = new byte[4096];
+                            int length;
+                            while ((length = inputStream.read(buffer)) > 0) {
+                                zipOut.write(buffer, 0, length);
+                            }
                         }
+                        zipOut.closeEntry();
                     }
                     return FileVisitResult.CONTINUE;
                 }
             });
-            saveLastModifiedMap(lastModifiedMap, backupRoot);
         } catch (IOException e) {
-            System.err.println("Erreur lors de la lecture des fichiers: " + e.getMessage());
+            System.err.println("Erreur lors de la création du fichier zip: " + e.getMessage());
         }
     }
+
+
 
     private void backupFile(File backupFile, File sourceFile) throws IOException {
         System.out.println("Sauvegarde du fichier : " + sourceFile.getPath());

@@ -34,8 +34,6 @@ services:
       - "636:636"
     domainname: "example.org"
     hostname: "ldap-server"
-    networks:
-      - ldap-network
 
   phpldapadmin:
     image: osixia/phpldapadmin:latest
@@ -43,8 +41,6 @@ services:
     environment:
       PHPLDAPADMIN_LDAP_HOSTS: "openldap"
       PHPLDAPADMIN_HTTPS: "false"
-    networks:
-      - ldap-network
     ports:
       - "8082:80"
     depends_on:
