@@ -1,7 +1,0 @@
-dn: uid=axel.frache,ou=users,dc=example,dc=org
-cn: Axel Frache
-mail: axel.frache@gmail.com
-objectclass: inetOrgPerson
-sn: Frache
-uid: axel.frache
-userpassword: {MD5}9x2+UmKKP4OnerSUgXUlxg==
