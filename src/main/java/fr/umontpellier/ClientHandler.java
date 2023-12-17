@@ -2,7 +2,7 @@ package fr.umontpellier;
 
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
-import fr.umontpellier.model.BackupDetails;
+import fr.umontpellier.model.Backup;
 import fr.umontpellier.model.User;
 
 import javax.net.ssl.SSLSocket;
@@ -29,58 +29,58 @@ class ClientHandler extends Thread {
     public void run() {
         User user = null;
         try (ObjectInputStream objectIn = new ObjectInputStream(clientSocket.getInputStream());
-             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+             ObjectOutputStream objectOut = new ObjectOutputStream(clientSocket.getOutputStream())) {
+
+            objectOut.flush(); // Important pour éviter le blocage du flux
 
             int attempts = 0;
             boolean isAuthenticated = false;
 
             while (attempts < 3 && !isAuthenticated) {
-                try {
-                    user = (User) objectIn.readObject();
+                user = (User) objectIn.readObject();
 
-                    if (user != null && authenticateWithLDAP(user.getUsername(), user.getPassword())) {
-                        synchronized (activeUsers) {
-                            if (activeUsers.contains(user.getUsername())) {
-                                out.println("Utilisateur déjà connecté.");
-                                System.out.println("Tentative de connexion refusée pour " + user.getUsername() + ": déjà connecté.");
-                                return;
-                            } else {
-                                activeUsers.add(user.getUsername());
-                            }
+                if (user != null && authenticateWithLDAP(user.getUsername(), user.getPassword())) {
+                    synchronized (activeUsers) {
+                        if (activeUsers.contains(user.getUsername())) {
+                            objectOut.writeObject("Utilisateur déjà connecté.");
+                            System.out.println("Tentative de connexion refusée pour " + user.getUsername() + ": déjà connecté.");
+                            return;
+                        } else {
+                            activeUsers.add(user.getUsername());
                         }
-
-                        isAuthenticated = true;
-                        System.out.println("Authentification réussie pour l'utilisateur: " + user.getUsername());
-                        out.println("OK");
-                        createUserDirectory(user.getUsername());
-
-                        while (true) {
-                            Object receivedObject = objectIn.readObject();
-                            if (receivedObject instanceof BackupDetails) {
-                                BackupDetails backupDetails = (BackupDetails) receivedObject;
-                                handleBackup(backupDetails, user.getUsername());
-                            } else if (receivedObject instanceof String && "END_CONNECTION".equals(receivedObject)) {
-                                System.out.println("Le client a demandé la fin de la connexion.");
-                                break; // Sortir de la boucle pour fermer la connexion
-                            }
-                        }
-                    } else {
-                        out.println("Authentification échouée. Veuillez réessayer.");
-                        attempts++;
                     }
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                    System.out.println("Classe User non trouvée lors de la désérialisation: " + e.getMessage());
-                    break;
+
+                    isAuthenticated = true;
+                    System.out.println("Authentification réussie pour l'utilisateur: " + user.getUsername());
+                    objectOut.writeObject("OK");
+
+                    createUserDirectory(user.getUsername());
+
+                    while (true) {
+                        Object receivedObject = objectIn.readObject();
+                        if (receivedObject instanceof Backup) {
+                            Backup backupDetails = (Backup) receivedObject;
+                            handleBackup(backupDetails, user.getUsername());
+                        } else if (receivedObject instanceof String && "RESTORE_REQUEST".equals(receivedObject)) {
+                            handleRestoreRequest(user.getUsername(), objectOut); // Ajout de objectOut comme argument
+                        } else if ("END_CONNECTION".equals(receivedObject)) {
+                            System.out.println("Le client a demandé la fin de la connexion.");
+                            break; // Sortir de la boucle pour fermer la connexion
+                        }
+                    }
+
+                } else {
+                    objectOut.writeObject("Authentification échouée. Veuillez réessayer.");
+                    attempts++;
                 }
             }
 
             if (!isAuthenticated) {
-                out.println("Nombre maximum de tentatives atteint. Connexion fermée.");
+                objectOut.writeObject("Nombre maximum de tentatives atteint. Connexion fermée.");
                 System.out.println("Connexion fermée après plusieurs tentatives d'authentification infructueuses.");
             }
 
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             System.out.println("Erreur lors de la communication avec le client: " + e.getMessage());
             e.printStackTrace();
         } finally {
@@ -133,7 +133,7 @@ class ClientHandler extends Thread {
         }
     }
 
-    private void handleBackup(BackupDetails backupDetails, String username) {
+    private void handleBackup(Backup backupDetails, String username) {
         System.out.println("Démarrage de la sauvegarde pour l'utilisateur : " + username);
         String directoryPath = backupDetails.getDirectoryPath();
         List<String> extensions = backupDetails.getFileExtensions();
@@ -201,6 +201,43 @@ class ClientHandler extends Thread {
             e.printStackTrace();
             // Gérer l'exception si nécessaire
         }
+    }
+
+    private void handleRestoreRequest(String username, ObjectOutputStream objectOut) throws IOException {
+        File userDirectory = new File("./users/" + username);
+        if (userDirectory.exists()) {
+            sendFilesInDirectory(userDirectory, username, objectOut);
+        } else {
+            System.out.println("Aucun dossier de sauvegarde trouvé pour l'utilisateur: " + username);
+        }
+    }
+
+    private void sendFilesInDirectory(File directory, String username, ObjectOutputStream objectOut) throws IOException {
+        Files.walkFileTree(directory.toPath(), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                // Send file path relative to the user's directory
+                String relativePath = directory.toPath().relativize(file).toString();
+                objectOut.writeObject(relativePath);
+                objectOut.flush();
+
+                // Send file content
+                try (InputStream fileStream = new BufferedInputStream(new FileInputStream(file.toFile()))) {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = fileStream.read(buffer)) != -1) {
+                        objectOut.write(buffer, 0, bytesRead);
+                    }
+                    objectOut.flush();
+                }
+
+                return FileVisitResult.CONTINUE;
+            }
+        });
+
+        // Indicate the end of the file transfer
+        objectOut.writeObject("RESTORE_COMPLETE");
+        objectOut.flush();
     }
 
 }
