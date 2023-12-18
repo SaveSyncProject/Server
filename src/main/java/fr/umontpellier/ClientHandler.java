@@ -9,6 +9,9 @@ import javax.net.ssl.SSLSocket;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -146,7 +149,11 @@ class ClientHandler extends Thread {
         }
 
         // Créer le fichier zip de sauvegarde
-        File zipFile = new File(backupRoot, "backup.zip");
+        // On  récupère la date est l'heure de la sauvegarde
+        String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm"));
+        String fileName = date + "-" + time + "_backup.zip";
+        File zipFile = new File(backupRoot, fileName);
         try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(zipFile))) {
             Set<Path> addedDirs = new HashSet<>();
 
