@@ -1,7 +1,6 @@
 package fr.umontpellier;
 
-import com.unboundid.ldap.sdk.LDAPConnection;
-import com.unboundid.ldap.sdk.LDAPException;
+
 import fr.umontpellier.model.Backup;
 import fr.umontpellier.model.User;
 
@@ -13,21 +12,20 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static fr.umontpellier.model.auth.LDAPConnection.authenticateWithLDAP;
+
 class ClientHandler extends Thread {
     private SSLSocket clientSocket;
     private static final Set<String> activeUsers = Collections.synchronizedSet(new HashSet<>());
-
     public ClientHandler(SSLSocket socket) {
         this.clientSocket = socket;
     }
-
     /**
      * Méthode pour gérer la communication avec le client
      */
@@ -106,24 +104,6 @@ class ClientHandler extends Thread {
     }
 
     /**
-     * Méthode pour authentifier un utilisateur avec LDAP
-     * @param username
-     * @param password
-     * @return
-     */
-    private boolean authenticateWithLDAP(String username, String password) {
-        try {
-            LDAPConnection connection = new LDAPConnection("localhost", 389);
-            connection.bind("uid=" + username + ",ou=users,dc=example,dc=org", password);
-            connection.close();
-            return true;
-        } catch (LDAPException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
      * Méthode pour créer un dossier de sauvegarde pour un utilisateur si nécessaire
      */
     private static void createUserDirectory(String username) {
@@ -138,6 +118,9 @@ class ClientHandler extends Thread {
         }
     }
 
+    /*
+     * Méthode pour gérer la sauvegarde des fichiers
+     */
     private void handleBackup(Backup backupDetails, String username) {
         System.out.println("Démarrage de la sauvegarde pour l'utilisateur : " + username);
         String directoryPath = backupDetails.getDirectoryPath();
@@ -197,44 +180,9 @@ class ClientHandler extends Thread {
         }
     }
 
-
-
-    private void backupFile(File backupFile, File sourceFile) throws IOException {
-        System.out.println("Sauvegarde du fichier : " + sourceFile.getPath());
-        backupFile.getParentFile().mkdirs();
-        try (FileInputStream in = new FileInputStream(sourceFile);
-             FileOutputStream out = new FileOutputStream(backupFile)) {
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = in.read(buffer)) > 0) {
-                out.write(buffer, 0, length);
-            }
-        }
-    }
-
-    private HashMap<String, Long> loadLastModifiedMap(File backupRoot) {
-        File lastModifiedFile = new File(backupRoot, "lastModifiedMap.ser");
-        if (lastModifiedFile.exists()) {
-            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(lastModifiedFile))) {
-                return (HashMap<String, Long>) ois.readObject();
-            } catch (IOException | ClassNotFoundException e) {
-                System.err.println("Erreur de sauvegarde : " + e.getMessage());
-                e.printStackTrace();
-            }
-        }
-        return new HashMap<>();
-    }
-
-    private void saveLastModifiedMap(HashMap<String, Long> lastModifiedMap, File backupRoot) {
-        File lastModifiedFile = new File(backupRoot, "lastModifiedMap.ser");
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(lastModifiedFile))) {
-            oos.writeObject(lastModifiedMap);
-        } catch (IOException e) {
-            e.printStackTrace();
-            // Gérer l'exception si nécessaire
-        }
-    }
-
+    /*
+     * Méthode pour envoyer les fichiers de sauvegarde à l'utilisateur
+     */
     private void handleRestoreRequest(String username, ObjectOutputStream objectOut) throws IOException {
         File userDirectory = new File("./users/" + username);
         if (userDirectory.exists()) {
