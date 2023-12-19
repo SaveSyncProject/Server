@@ -1,16 +1,15 @@
 package fr.umontpellier.model.request;
 
 import java.io.*;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.List;
 
-public class RestoreRequest  {
+public class RestoreRequest {
 
     /*
-     * Méthode pour envoyer les fichiers de sauvegarde à l'utilisateur
+     * Méthode pour envoyer les fichiers de sauvegarde à l'utilisateur depuis le serveur
+     * C'est la méthode pour la restauration complète
      */
     public void handleRestoreRequest(String username, ObjectOutputStream objectOut) throws IOException {
         File userDirectory = new File("./users/" + username);
@@ -20,6 +19,34 @@ public class RestoreRequest  {
             System.out.println("Aucun dossier de sauvegarde trouvé pour l'utilisateur: " + username);
         }
     }
+    /*
+     * Méthode pour envoyer les fichiers de sauvegarde à l'utilisateur depuis le serveur
+     * C'est la méthode pour la restauration partielle
+     */
+    public void restoreFiles(String username, List<String> filesToRestore, ObjectOutputStream objectOut) throws IOException {
+        Path userDir = Paths.get("users", username);
+
+        for (String filePath : filesToRestore) {
+            Path file = userDir.resolve(filePath);
+            System.out.println("Restauration du fichier : " + file.toAbsolutePath().toString());
+
+            if (Files.exists(file)) {
+                objectOut.writeObject(filePath); // Envoyer le chemin relatif du fichier, y compris le dossier de sauvegarde
+                try (InputStream fileIn = Files.newInputStream(file)) {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = fileIn.read(buffer)) != -1) {
+                        objectOut.write(buffer, 0, bytesRead);
+                    }
+                }
+                objectOut.flush();
+            }
+        }
+        objectOut.writeObject("RESTORE_COMPLETE");
+    }
+
+
+
 
     private void sendFilesInDirectory(File directory, String username, ObjectOutputStream objectOut) throws IOException {
         Files.walkFileTree(directory.toPath(), new SimpleFileVisitor<Path>() {

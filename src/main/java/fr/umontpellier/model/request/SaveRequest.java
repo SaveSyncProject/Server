@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class SaveRequest {
@@ -29,11 +30,11 @@ public class SaveRequest {
         }
 
         // Créer le fichier zip de sauvegarde
-        // On  récupère la date est l'heure de la sauvegarde
+        // On récupère la date est l'heure de la sauvegarde
         String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm"));
-        String fileName = date + "-" + time + "_backup.zip";
-        File zipFile = new File(backupRoot, fileName);
+        String zipFileName = directoryPath.substring(directoryPath.lastIndexOf(File.separator) + 1) + "-" + date +"-"+ time + "_backup.zip";
+        File zipFile = new File(backupRoot, zipFileName);
         try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(zipFile))) {
             Set<Path> addedDirs = new HashSet<>();
 
@@ -74,6 +75,40 @@ public class SaveRequest {
             });
         } catch (IOException e) {
             System.err.println("Erreur lors de la création du fichier zip: " + e.getMessage());
+        }
+
+        // Dézipper pour le stockage
+        String unzippedDirectoryName = directoryPath.substring(directoryPath.lastIndexOf(File.separator) + 1) + "-" + date+"-"+ time + "_backup";
+        File unzippedDir = new File(backupRoot, unzippedDirectoryName);
+        unzipBackup(zipFile, unzippedDir.getAbsolutePath());
+
+        // Suppression du fichier ZIP après décompression
+        if (!zipFile.delete()) {
+            System.err.println("Impossible de supprimer le fichier zip: " + zipFile.getAbsolutePath());
+        }
+    }
+
+    private void unzipBackup(File zipFile, String outputPath) {
+        try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(zipFile))) {
+            ZipEntry entry;
+            while ((entry = zipInputStream.getNextEntry()) != null) {
+                File file = new File(outputPath, entry.getName());
+                if (entry.isDirectory()) {
+                    file.mkdirs();
+                } else {
+                    file.getParentFile().mkdirs();
+                    try (OutputStream outputStream = new FileOutputStream(file)) {
+                        byte[] buffer = new byte[4096];
+                        int length;
+                        while ((length = zipInputStream.read(buffer)) > 0) {
+                            outputStream.write(buffer, 0, length);
+                        }
+                    }
+                }
+                zipInputStream.closeEntry();
+            }
+        } catch (IOException e) {
+            System.err.println("Erreur lors de la décompression du fichier zip: " + e.getMessage());
         }
     }
 }
