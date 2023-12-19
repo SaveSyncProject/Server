@@ -9,11 +9,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 public class RestoreRequest  {
 
-    enum typeOfRequest {
-        SAVE,
-        RESTORE
-    }
-
     /*
      * Méthode pour envoyer les fichiers de sauvegarde à l'utilisateur
      */

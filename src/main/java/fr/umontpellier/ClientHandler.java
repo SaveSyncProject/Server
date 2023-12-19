@@ -6,12 +6,14 @@ import javax.net.ssl.SSLSocket;
 import java.io.*;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import static fr.umontpellier.model.auth.LDAPConnection.authenticateWithLDAP;
 
 import fr.umontpellier.model.request.SaveRequest;
 import fr.umontpellier.model.request.RestoreRequest;
-
+import fr.umontpellier.model.request.DeleteBackup;
+import fr.umontpellier.model.request.ListBackup;
 class ClientHandler extends Thread {
     private SSLSocket clientSocket;
     private static final Set<String> activeUsers = Collections.synchronizedSet(new HashSet<>());
@@ -26,7 +28,7 @@ class ClientHandler extends Thread {
         try (ObjectInputStream objectIn = new ObjectInputStream(clientSocket.getInputStream());
              ObjectOutputStream objectOut = new ObjectOutputStream(clientSocket.getOutputStream())) {
 
-            objectOut.flush(); // Important pour éviter le blocage du flux
+            objectOut.flush();
 
             int attempts = 0;
             boolean isAuthenticated = false;
@@ -53,7 +55,13 @@ class ClientHandler extends Thread {
 
                     while (true) {
                         Object receivedObject = objectIn.readObject(); // On reçoit la requête du client
-                        if ("SAVE_REQUEST".equals(receivedObject)) {
+                        if("LIST_BACKUPS_REQUEST".equals(receivedObject)){
+                            ListBackup listBackup = new ListBackup();
+                            List<String> listBackupEnvoie = listBackup.listBackups(user.getUsername());
+                            objectOut.writeObject(listBackupEnvoie);
+                            objectOut.flush();
+
+                        }else if ("SAVE_REQUEST".equals(receivedObject)) {
 
                             Object receivedObject2 = objectIn.readObject();
                             Backup backupDetails = (Backup) receivedObject2;
@@ -67,7 +75,7 @@ class ClientHandler extends Thread {
 
                         else if ("END_CONNECTION".equals(receivedObject)) {
                             System.out.println("Le client a demandé la fin de la connexion.");
-                            break; // Sortir de la boucle pour fermer la connexion
+                            break;
                         }
                     }
 
