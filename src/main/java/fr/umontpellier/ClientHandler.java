@@ -52,19 +52,25 @@ class ClientHandler extends Thread {
                     createUserDirectory(user.getUsername());
 
                     while (true) {
-                        Object receivedObject = objectIn.readObject();
-                        if (receivedObject instanceof Backup) {
-                            Backup backupDetails = (Backup) receivedObject;
+                        Object receivedObject = objectIn.readObject(); // On reçoit la requête du client
+                        if ("SAVE_REQUEST".equals(receivedObject)) {
+
+                            Object receivedObject2 = objectIn.readObject();
+                            Backup backupDetails = (Backup) receivedObject2;
                             SaveRequest saveRequest = new SaveRequest();
                             saveRequest.handleBackup(backupDetails, user.getUsername());
-                        } else if (receivedObject instanceof String && "RESTORE_REQUEST".equals(receivedObject)) {
+                        }
+                        else if ("RESTORE_REQUEST".equals(receivedObject)) {
                             RestoreRequest restoreRequest = new RestoreRequest();
-                            restoreRequest.handleRestoreRequest(user.getUsername(), objectOut); // Ajout de objectOut comme argument
-                        } else if ("END_CONNECTION".equals(receivedObject)) {
+                            restoreRequest.handleRestoreRequest(user.getUsername(), objectOut);
+                        }
+
+                        else if ("END_CONNECTION".equals(receivedObject)) {
                             System.out.println("Le client a demandé la fin de la connexion.");
                             break; // Sortir de la boucle pour fermer la connexion
                         }
                     }
+
 
                 } else {
                     objectOut.writeObject("Authentification échouée. Veuillez réessayer.");

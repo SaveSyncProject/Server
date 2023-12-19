@@ -7,7 +7,12 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
-public class RestoreRequest implements Request {
+public class RestoreRequest  {
+
+    enum typeOfRequest {
+        SAVE,
+        RESTORE
+    }
 
     /*
      * Méthode pour envoyer les fichiers de sauvegarde à l'utilisateur
