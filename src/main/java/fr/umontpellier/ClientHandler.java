@@ -44,24 +44,22 @@ class ClientHandler extends Thread {
                 if (user != null && authenticateWithLDAP(user.getUsername(), user.getPassword())) {
                     synchronized (activeUsers) {
                         if (activeUsers.contains(user.getUsername())) {
-                            objectOut.writeObject("Utilisateur déjà connecté.");
-                            System.out.println("Tentative de connexion refusée pour " + user.getUsername() + ": déjà connecté.");
+                            objectOut.writeObject("User already connected.");
+                            System.out.println("Connection refused for user: " + user.getUsername());
                             return;
                         } else {
                             activeUsers.add(user.getUsername());
                         }
                     }
 
-                    System.out.println("Authentification réussie pour l'utilisateur: " + user.getUsername());
+                    System.out.println("Connection accepted for user: " + user.getUsername());
                     objectOut.writeObject("OK");
 
                     createUserDirectory(user.getUsername());
 
                     while (true) {
-                        // Lecture de la requête du client
                         String requestType = (String) objectIn.readObject();
 
-                        // Traitement de la requête en fonction de l'entête
                         switch (requestType) {
                             case "LIST_BACKUPS_REQUEST" -> {
                                 ReadBackupRequest listBackups = new ReadBackupRequest();
@@ -105,10 +103,10 @@ class ClientHandler extends Thread {
                                 objectOut.flush();
                             }
                             case "END_CONNECTION" -> {
-                                System.out.println("Le client a demandé la fin de la connexion.");
-                                return; // Sortir de la boucle
+                                System.out.println("Client closed connection.");
+                                return;
                             }
-                            default -> System.out.println("Requête non reconnue: " + requestType);
+                            default -> System.out.println("Unknown request type: " + requestType);
                         }
                     }
 
@@ -118,14 +116,13 @@ class ClientHandler extends Thread {
                 }
             }
 
-            // Si l'utilisateur n'a pas été authentifié après 3 tentatives, on ferme la connexion
             if (!isAuthenticated) {
                 objectOut.writeObject("Nombre maximum de tentatives atteint. Connexion fermée.");
-                System.out.println("Connexion fermée après plusieurs tentatives d'authentification infructueuses.");
+                System.out.println("Connection refused for user: " + user.getUsername());
             }
 
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Erreur lors de la communication avec le client: " + e.getMessage());
+            System.out.println("Error while handling client request: " + e.getMessage());
             e.printStackTrace();
         } finally {
             if (clientSocket != null && !clientSocket.isClosed()) {
@@ -138,24 +135,25 @@ class ClientHandler extends Thread {
             if (user != null) {
                 synchronized (activeUsers) {
                     activeUsers.remove(user.getUsername());
-                    System.out.println("Utilisateur déconnecté: " + user.getUsername());
+                    System.out.println("User disconnected: " + user.getUsername());
                 }
             }
         }
     }
 
-
     /**
-     * Méthode pour créer un dossier de sauvegarde pour un utilisateur si nécessaire
+     * Crée un dossier pour l'utilisateur
+     *
+     * @param username le nom de l'utilisateur
      */
     private static void createUserDirectory(String username) {
         File userDirectory = new File("./users/" + username);
         if (!userDirectory.exists()) {
             boolean isCreated = userDirectory.mkdirs();
             if (isCreated) {
-                System.out.println("Dossier créé pour l'utilisateur: " + username);
+                System.out.println("Folder created for user: " + username);
             } else {
-                System.out.println("Impossible de créer le dossier pour l'utilisateur: " + username);
+                System.out.println("Error while creating folder for user: " + username);
             }
         }
     }

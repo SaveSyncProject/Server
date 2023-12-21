@@ -19,7 +19,7 @@ public class RestoreBackupRequest {
         if (Files.exists(userDirectory)) {
             sendFilesInDirectory(userDirectory, objectOut);
         } else {
-            System.out.println("Aucun dossier de sauvegarde trouvé pour l'utilisateur: " + username);
+            System.out.println("No backup found for user: " + username);
         }
     }
 
@@ -35,7 +35,7 @@ public class RestoreBackupRequest {
         Path userDir = Paths.get("./users", username);
         for (String filePath : filesToRestore) {
             Path file = userDir.resolve(filePath);
-            System.out.println("Restauration du fichier : " + file);
+            System.out.println("Restoring file: " + file);
             sendFile(file, filePath, objectOut);
         }
         objectOut.writeObject("RESTORE_COMPLETE");

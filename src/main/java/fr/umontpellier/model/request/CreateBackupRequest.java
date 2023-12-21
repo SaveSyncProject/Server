@@ -24,7 +24,7 @@ public class CreateBackupRequest {
      * @param username le nom de l'utilisateur
      */
     public void handleBackup(Backup backupDetails, String username) {
-        System.out.println("Démarrage de la sauvegarde pour l'utilisateur : " + username);
+        System.out.println("Starting backup for user: " + username);
         Path directoryPath = Paths.get(backupDetails.getDirectoryPath());
         List<String> extensions = backupDetails.getFileExtensions();
         Path backupRoot = Paths.get("./users", username);
@@ -42,7 +42,7 @@ public class CreateBackupRequest {
             try {
                 Files.createDirectories(directory);
             } catch (IOException e) {
-                System.err.println("Erreur lors de la création du dossier: " + e.getMessage());
+                System.err.println("Error while creating directory: " + directory + " - " + e.getMessage());
             }
         }
     }
@@ -67,7 +67,7 @@ public class CreateBackupRequest {
                 }
             });
         } catch (IOException e) {
-            System.err.println("Erreur lors de la création du fichier zip: " + e.getMessage());
+            System.err.println("Error while zipping directory: " + directoryPath + " - " + e.getMessage());
         }
     }
 
@@ -116,7 +116,7 @@ public class CreateBackupRequest {
         try {
             Files.deleteIfExists(file);
         } catch (IOException e) {
-            System.err.println("Impossible de supprimer le fichier: " + file);
+            System.err.println("Error while deleting file: " + file + " - " + e.getMessage());
         }
     }
 }

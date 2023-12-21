@@ -33,12 +33,12 @@ public class DeleteBackupRequest {
                         try {
                             Files.delete(path);
                         } catch (IOException e) {
-                            System.err.println("Erreur lors de la suppression: " + path + " - " + e.getMessage());
+                            System.err.println("Error while deleting file: " + path + " - " + e.getMessage());
                         }
                     });
             return !Files.exists(directory);
         } catch (IOException e) {
-            System.err.println("Erreur lors de la suppression du répertoire: " + directory + " - " + e.getMessage());
+            System.err.println("Error while deleting directory: " + directory + " - " + e.getMessage());
             return false;
         }
     }
@@ -67,7 +67,7 @@ public class DeleteBackupRequest {
         try {
             return Files.deleteIfExists(path);
         } catch (IOException e) {
-            System.err.println("Erreur lors de la suppression du fichier: " + path + " - " + e.getMessage());
+            System.err.println("Error while deleting file: " + path + " - " + e.getMessage());
             return false;
         }
     }

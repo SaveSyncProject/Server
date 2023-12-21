@@ -25,7 +25,7 @@ public class ReadBackupRequest {
                     .filter(name -> name.endsWith("_backup"))
                     .collect(Collectors.toList());
         } catch (IOException e) {
-            System.err.println("Erreur lors de la lecture des sauvegardes: " + e.getMessage());
+            System.err.println("Error while listing backups: " + e.getMessage());
             return List.of();
         }
     }
@@ -48,7 +48,7 @@ public class ReadBackupRequest {
                         .map(Path::toString)
                         .collect(Collectors.toList());
             } catch (IOException e) {
-                System.err.println("Erreur lors de la lecture des fichiers: " + e.getMessage());
+                System.err.println("Error while listing files: " + e.getMessage());
             }
         }
         return List.of();
