@@ -10,15 +10,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static fr.umontpellier.model.auth.LDAPConnection.authenticateWithLDAP;
+import static fr.umontpellier.model.authentication.LDAPConnection.authenticateWithLDAP;
 
-import fr.umontpellier.model.request.SaveRequest;
-import fr.umontpellier.model.request.RestoreRequest;
-import fr.umontpellier.model.request.DeleteBackup;
-import fr.umontpellier.model.request.ListBackup;
+import fr.umontpellier.model.request.CreateBackupRequest;
+import fr.umontpellier.model.request.RestoreBackupRequest;
+import fr.umontpellier.model.request.DeleteBackupRequest;
+import fr.umontpellier.model.request.ReadBackupRequest;
 
 class ClientHandler extends Thread {
-    private SSLSocket clientSocket;
+    private final SSLSocket clientSocket;
     private static final Set<String> activeUsers = Collections.synchronizedSet(new HashSet<>());
 
     public ClientHandler(SSLSocket socket) {
@@ -26,7 +26,7 @@ class ClientHandler extends Thread {
     }
 
     /**
-     * Méthode pour gérer la communication avec le client
+     * Méthode pour gérer les requêtes du client
      */
     public void run() {
         User user = null;
@@ -38,7 +38,7 @@ class ClientHandler extends Thread {
             int attempts = 0;
             boolean isAuthenticated = false;
 
-            while (attempts < 3 && !isAuthenticated) {
+            while (attempts < 3) {
                 user = (User) objectIn.readObject();
 
                 if (user != null && authenticateWithLDAP(user.getUsername(), user.getPassword())) {
@@ -52,86 +52,73 @@ class ClientHandler extends Thread {
                         }
                     }
 
-                    isAuthenticated = true;
                     System.out.println("Authentification réussie pour l'utilisateur: " + user.getUsername());
                     objectOut.writeObject("OK");
 
                     createUserDirectory(user.getUsername());
 
                     while (true) {
-                        Object receivedObject = objectIn.readObject(); // On reçoit la requête du client
-                        // Requête de lister les backups
-                        if ("LIST_BACKUPS_REQUEST".equals(receivedObject)) {
-                            ListBackup listBackups = new ListBackup();
-                            List<String> backupList = listBackups.listBackups(user.getUsername());
-                            objectOut.writeObject(backupList);
-                            objectOut.flush();
-                        }
-                        // Requête de lister les fichiers dans un backup
-                        else if ("LIST_FILES_REQUEST".equals(receivedObject)) {
-                            ListBackup listFiles = new ListBackup();
-                            String backupName = (String) objectIn.readObject();
-                            List<String> files = listFiles.listFilesInBackup(user.getUsername(), backupName);
-                            objectOut.writeObject(files);
-                            objectOut.flush();
-                        }
-                        // Requête de sauvegarde d'un dossier
-                        else if ("SAVE_REQUEST".equals(receivedObject)) {
-                            Object receivedObject2 = objectIn.readObject();
-                            Backup backupDetails = (Backup) receivedObject2;
-                            SaveRequest saveRequest = new SaveRequest();
-                            saveRequest.handleBackup(backupDetails, user.getUsername());
-                        }
-                        // Requête de restauration complète d'un backup
-                        else if ("RESTORE_ALL_REQUEST".equals(receivedObject)) {
-                            RestoreRequest restoreRequest = new RestoreRequest();
-                            restoreRequest.handleRestoreRequest(user.getUsername(), objectOut);
-                        }
-                        // Requête de restauration partiel d'un backup
-                        else if("RESTORE_PARTIAL_REQUEST".equals(receivedObject)) {
-                            try {
-                                List<String> filesToRestore = (List<String>) objectIn.readObject();
-                                RestoreRequest restorePartialRequest = new RestoreRequest();
-                                restorePartialRequest.restoreFiles(user.getUsername(), filesToRestore, objectOut);
-                            } catch (ClassNotFoundException | IOException e) {
-                                e.printStackTrace();
+                        // Lecture de la requête du client
+                        String requestType = (String) objectIn.readObject();
+
+                        // Traitement de la requête en fonction de l'entête
+                        switch (requestType) {
+                            case "LIST_BACKUPS_REQUEST" -> {
+                                ReadBackupRequest listBackups = new ReadBackupRequest();
+                                List<String> backupList = listBackups.listBackups(user.getUsername());
+                                objectOut.writeObject(backupList);
+                                objectOut.flush();
                             }
-                        }
-                        // Requête qui supprime un backup
-                        else if("DELETE_BACKUP_REQUEST".equals(receivedObject)) {
-                            try {
+                            case "LIST_FILES_REQUEST" -> {
+                                ReadBackupRequest listFiles = new ReadBackupRequest();
                                 String backupName = (String) objectIn.readObject();
-                                DeleteBackup deleteBackupRequest = new DeleteBackup();
-                                boolean isSuccessful = deleteBackupRequest.deleteBackup(user.getUsername(), backupName);
-                                objectOut.writeObject(isSuccessful ? "SUCCESS" : "ERROR");
+                                List<String> files = listFiles.listFiles(user.getUsername(), backupName);
+                                objectOut.writeObject(files);
                                 objectOut.flush();
-                            } catch (ClassNotFoundException | IOException e) {
-                                e.printStackTrace();
                             }
-                        }
-                        // Requête de suppression de fichiers dans un backup
-                        else if ("DELETE_FILES_REQUEST".equals(receivedObject)) {
-                            try {
+                            case "SAVE_REQUEST" -> {
+                                Backup backupDetails = (Backup) objectIn.readObject();
+                                CreateBackupRequest createBackupRequest = new CreateBackupRequest();
+                                createBackupRequest.handleBackup(backupDetails, user.getUsername());
+                            }
+                            case "RESTORE_ALL_REQUEST" -> {
+                                RestoreBackupRequest restoreBackupRequest = new RestoreBackupRequest();
+                                restoreBackupRequest.handleRestoreRequest(user.getUsername(), objectOut);
+                            }
+                            case "RESTORE_PARTIAL_REQUEST" -> {
+                                List<String> filesToRestore = (List<String>) objectIn.readObject();
+                                RestoreBackupRequest restorePartialRequest = new RestoreBackupRequest();
+                                restorePartialRequest.restoreFiles(user.getUsername(), filesToRestore, objectOut);
+                            }
+                            case "DELETE_BACKUP_REQUEST" -> {
+                                String deleteBackupName = (String) objectIn.readObject();
+                                DeleteBackupRequest deleteRequestBackupRequest = new DeleteBackupRequest();
+                                boolean deleteSuccessful = deleteRequestBackupRequest.deleteBackup(user.getUsername(), deleteBackupName);
+                                objectOut.writeObject(deleteSuccessful ? "SUCCESS" : "ERROR");
+                                objectOut.flush();
+                            }
+                            case "DELETE_FILES_REQUEST" -> {
                                 List<String> filesToDelete = (List<String>) objectIn.readObject();
-                                DeleteBackup deleteFilesRequest = new DeleteBackup();
-                                boolean isSuccessful = deleteFilesRequest.deleteFiles(user.getUsername(), filesToDelete);
-                                objectOut.writeObject(isSuccessful ? "SUCCESS" : "ERROR");
+                                DeleteBackupRequest deleteFilesRequest = new DeleteBackupRequest();
+                                boolean deleteFilesSuccessful = deleteFilesRequest.deleteFiles(user.getUsername(), filesToDelete);
+                                objectOut.writeObject(deleteFilesSuccessful ? "SUCCESS" : "ERROR");
                                 objectOut.flush();
-                            } catch (ClassNotFoundException | IOException e) {
-                                e.printStackTrace();
                             }
-                            // Requête de déconnexion
-                        } else if ("END_CONNECTION".equals(receivedObject)) {
-                            System.out.println("Le client a demandé la fin de la connexion.");
-                            break;
+                            case "END_CONNECTION" -> {
+                                System.out.println("Le client a demandé la fin de la connexion.");
+                                return; // Sortir de la boucle
+                            }
+                            default -> System.out.println("Requête non reconnue: " + requestType);
                         }
                     }
+
                 } else {
                     objectOut.writeObject("Authentification échouée. Veuillez réessayer.");
                     attempts++;
                 }
             }
 
+            // Si l'utilisateur n'a pas été authentifié après 3 tentatives, on ferme la connexion
             if (!isAuthenticated) {
                 objectOut.writeObject("Nombre maximum de tentatives atteint. Connexion fermée.");
                 System.out.println("Connexion fermée après plusieurs tentatives d'authentification infructueuses.");

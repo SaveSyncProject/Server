@@ -1,4 +1,4 @@
-package fr.umontpellier.model.auth;
+package fr.umontpellier.model.authentication;
 
 import com.unboundid.ldap.sdk.LDAPException;
 
@@ -6,9 +6,9 @@ public class LDAPConnection {
 
     /**
      * Méthode pour authentifier un utilisateur avec LDAP
-     * @param username
-     * @param password
-     * @return
+     * @param username nom d'utilisateur
+     * @param password mot de passe de l'utilisateur
+     * @return true si l'authentification est réussie, false sinon
      */
     public static boolean authenticateWithLDAP(String username, String password) {
         try {
@@ -21,6 +21,5 @@ public class LDAPConnection {
             return false;
         }
     }
-
 
 }
