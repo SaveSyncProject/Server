@@ -19,9 +19,10 @@ public class ServerApplication {
             // Récupérer le chemin du fichier keystore.jks
             URL keystoreResource = ServerApplication.class.getClassLoader().getResource("ssl/server/mySrvKeystore.jks");
             if (keystoreResource == null) {
-                throw new FileNotFoundException("Le fichier 'myServerKeystore.jks' est introuvable.");
+                throw new FileNotFoundException("Keystore file not found");
             }
-            String keystorePassword = "miaoumiaou"; // Remplacez par votre mot de passe de keystore
+            // Mot de passe du keystore
+            String keystorePassword = "miaoumiaou";
 
             // Charger le keystore
             KeyStore ks = KeyStore.getInstance("JKS");
@@ -39,7 +40,7 @@ public class ServerApplication {
             SSLServerSocketFactory sslServerSocketFactory = sslContext.getServerSocketFactory();
             SSLServerSocket sslServerSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket(port);
 
-            System.out.println("Serveur SSL en écoute sur le port " + port + " et sur l'adresse " + InetAddress.getLocalHost().getHostAddress());
+            System.out.println("Server is listening on port " + port + " and IP address " + InetAddress.getLocalHost().getHostAddress());
 
             while (true) {
                 SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
@@ -47,7 +48,7 @@ public class ServerApplication {
             }
         } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | UnrecoverableKeyException | KeyManagementException e) {
             e.printStackTrace();
-            System.out.println("Erreur lors de la configuration du serveur SSL: " + e.getMessage());
+            System.out.println("Error while initializing the server: " + e.getMessage());
         }
     }
 }

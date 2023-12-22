@@ -17,15 +17,15 @@ public class Backup implements Serializable {
         return directoryPath;
     }
 
-    public void setDirectoryPath(String directoryPath) {
-        this.directoryPath = directoryPath;
-    }
-
     public List<String> getFileExtensions() {
         return fileExtensions;
     }
 
     public void setFileExtensions(List<String> fileExtensions) {
         this.fileExtensions = fileExtensions;
+    }
+
+    public void setDirectoryPath(String directoryPath) {
+        this.directoryPath = directoryPath;
     }
 }
