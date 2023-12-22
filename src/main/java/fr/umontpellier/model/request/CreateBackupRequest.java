@@ -49,7 +49,7 @@ public class CreateBackupRequest {
 
     private Path createZipFilePath(Path directoryPath, Path backupRoot) {
         String timestamp = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "-"
-                + LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm"));
+                + LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm-ss"));
         String fileName = directoryPath.getFileName().toString() + "-" + timestamp + "_backup.zip";
         return backupRoot.resolve(fileName);
     }
@@ -80,7 +80,7 @@ public class CreateBackupRequest {
 
     private String createUnzippedDirectoryName(Path directoryPath) {
         String timestamp = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "-"
-                + LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm"));
+                + LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm-ss"));
         return directoryPath.getFileName().toString() + "-" + timestamp + "_backup";
     }
 
