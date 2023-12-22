@@ -80,8 +80,9 @@ class ClientHandler extends Thread {
                                 createBackupRequest.handleBackup(backupDetails, user.getUsername());
                             }
                             case "RESTORE_ALL_REQUEST" -> {
+                                String backupName = (String) objectIn.readObject();
                                 RestoreBackupRequest restoreBackupRequest = new RestoreBackupRequest();
-                                restoreBackupRequest.handleRestoreRequest(user.getUsername(), objectOut);
+                                restoreBackupRequest.handleRestoreRequest(user.getUsername(), backupName, objectOut);
                             }
                             case "RESTORE_PARTIAL_REQUEST" -> {
                                 List<String> filesToRestore = (List<String>) objectIn.readObject();

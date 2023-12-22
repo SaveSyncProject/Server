@@ -14,14 +14,15 @@ public class RestoreBackupRequest {
      * @param objectOut       le flux de sortie
      * @throws IOException si une erreur d'entrée/sortie survient
      */
-    public void handleRestoreRequest(String username, ObjectOutputStream objectOut) throws IOException {
-        Path userDirectory = Paths.get("./users", username);
-        if (Files.exists(userDirectory)) {
-            sendFilesInDirectory(userDirectory, objectOut);
+    public void handleRestoreRequest(String username, String backupName, ObjectOutputStream objectOut) throws IOException {
+        Path backupDirectory = Paths.get("./users", username, backupName);
+        if (Files.exists(backupDirectory)) {
+            sendFilesInDirectory(backupDirectory, objectOut);
         } else {
-            System.out.println("No backup found for user: " + username);
+            System.out.println("No backup found for user: " + username + " with name: " + backupName);
         }
     }
+
 
     /**
      * Restaure les fichiers d'une sauvegarde
@@ -34,9 +35,11 @@ public class RestoreBackupRequest {
     public void restoreFiles(String username, List<String> filesToRestore, ObjectOutputStream objectOut) throws IOException {
         Path userDir = Paths.get("./users", username);
         for (String filePath : filesToRestore) {
-            Path file = userDir.resolve(filePath);
-            System.out.println("Restoring file: " + file);
-            sendFile(file, filePath, objectOut);
+            Path fullFilePath = userDir.resolve(filePath);
+            Path path = Paths.get(filePath);
+            Path relativeFilePath = path.subpath(1, path.getNameCount()); // Ignorez le nom de la sauvegarde
+            System.out.println("Restoring file: " + fullFilePath);
+            sendFile(fullFilePath, relativeFilePath.toString(), objectOut);
         }
         objectOut.writeObject("RESTORE_COMPLETE");
         objectOut.flush();
