@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
@@ -39,11 +40,12 @@ public class RestoreBackupRequest {
                 Files.deleteIfExists(decryptedFile);
             }
         }
-        reencryptFilesInDirectory(backupDirectory, key);
+
         System.out.println("Restore Partial");
         objectOut.writeObject("RESTORE_COMPLETE");
         objectOut.flush();
     }
+
 
     private Path decryptIndividualFile(Path file, SecretKey key) throws Exception {
         Path tempDecryptedFile = Files.createTempFile("decrypted_", null);

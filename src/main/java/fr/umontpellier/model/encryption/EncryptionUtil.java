@@ -14,7 +14,7 @@ public class EncryptionUtil {
 
     private static final String ALGORITHM = "AES/CBC/PKCS5Padding";
     private static final int KEYSIZE = 128;
-    private static final byte[] IV = new byte[16]; // Vecteur d'initialisation pour le mode CBC
+    private static final byte[] IV = new byte[16];
 
     public static SecretKey generateKey() throws Exception {
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
@@ -72,18 +72,8 @@ public class EncryptionUtil {
         doCrypto(Cipher.DECRYPT_MODE, key, inputFile, outputFile);
     }
 
-    public static void main(String[] args) {
-        try {
-            SecretKey key = EncryptionUtil.generateKey();
-            File folderToProcess = new File("C:\\Demo_Sauvegarde");
-            EncryptionUtil.processFolder(key, folderToProcess, true); // Pour encrypter
-
-            System.out.println("Clé: ");
-
-            // Pour décrypter, utilisez :
-            // EncryptionUtil.processFolder(key, folderToProcess, false);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public static void encryptFile(SecretKey key, File inputFile, File outputFile) throws Exception {
+        doCrypto(Cipher.ENCRYPT_MODE, key, inputFile, outputFile);
     }
+
 }
