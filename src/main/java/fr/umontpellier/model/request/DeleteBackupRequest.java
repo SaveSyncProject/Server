@@ -1,9 +1,11 @@
 package fr.umontpellier.model.request;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.*;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DeleteBackupRequest {
@@ -17,7 +19,13 @@ public class DeleteBackupRequest {
      */
     public boolean deleteBackup(String username, String backupName) {
         Path backupDir = Paths.get("./users", username, backupName);
-        return deleteDirectory(backupDir);
+        boolean isDeleted = deleteDirectory(backupDir);
+
+        if (isDeleted) {
+            removeBackupFromCSV(backupName);
+        }
+
+        return isDeleted;
     }
 
     /**
@@ -69,6 +77,28 @@ public class DeleteBackupRequest {
         } catch (IOException e) {
             System.err.println("Error while deleting file: " + path + " - " + e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Supprime une clé de la liste des clés
+     * @param backupName
+     */
+    private void removeBackupFromCSV(String backupName) {
+        try {
+            URL resourceUrl = DeleteBackupRequest.class.getClassLoader().getResource("key/backup_keys.csv");
+            if (resourceUrl == null) {
+                throw new IllegalStateException("Fichier 'backup_keys.csv' non trouvé dans les ressources");
+            }
+            Path csvFilePath = Paths.get(resourceUrl.toURI());
+            List<String> lines = Files.readAllLines(csvFilePath);
+            List<String> updatedLines = lines.stream()
+                    .filter(line -> !line.startsWith(backupName + ","))
+                    .collect(Collectors.toList());
+
+            Files.write(csvFilePath, updatedLines, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la mise à jour du fichier CSV: " + e.getMessage());
         }
     }
 }

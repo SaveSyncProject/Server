@@ -2,18 +2,23 @@ package fr.umontpellier.model.request;
 
 import fr.umontpellier.model.Backup;
 
+import javax.crypto.SecretKey;
 import java.io.*;
+import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import fr.umontpellier.model.encryption.EncryptionUtil;
+
 
 public class CreateBackupRequest {
 
@@ -31,10 +36,21 @@ public class CreateBackupRequest {
 
         createDirectory(backupRoot);
 
+        String backupName = createUnzippedDirectoryName(directoryPath);
         Path zipFilePath = createZipFilePath(directoryPath, backupRoot);
         zipDirectory(directoryPath, extensions, zipFilePath);
-        unzipBackup(zipFilePath, backupRoot.resolve(createUnzippedDirectoryName(directoryPath)));
+        unzipBackup(zipFilePath, backupRoot.resolve(backupName));
+        Path backupDirectory = backupRoot.resolve(backupName);
         deleteFile(zipFilePath);
+
+        try {
+            SecretKey key = EncryptionUtil.generateKey();
+            String keyString = Base64.getEncoder().encodeToString(key.getEncoded());
+            saveKeyToCSV(backupName, keyString);
+            EncryptionUtil.processFolder(key, backupDirectory.toFile(), true); // Encrypter le dossier de sauvegarde
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void createDirectory(Path directory) {
@@ -119,4 +135,24 @@ public class CreateBackupRequest {
             System.err.println("Error while deleting file: " + file + " - " + e.getMessage());
         }
     }
+
+    private void saveKeyToCSV(String backupReference, String keyString) {
+        try {
+            URL resourceUrl = CreateBackupRequest.class.getClassLoader().getResource("key");
+            if (resourceUrl == null) {
+                throw new IllegalStateException("Dossier 'Key' non trouvé dans les ressources");
+            }
+            Path resourcePath = Paths.get(resourceUrl.toURI());
+            Path csvFilePath = resourcePath.resolve("backup_keys.csv");
+            System.out.println("CSV file path: " + csvFilePath);
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(csvFilePath.toFile(), true))) {
+                writer.write(backupReference + "," + keyString);
+                writer.newLine();
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors de l'écriture dans le fichier CSV: " + e.getMessage());
+        }
+    }
+
 }
