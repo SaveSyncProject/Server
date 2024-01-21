@@ -5,30 +5,42 @@ import fr.umontpellier.model.encryption.EncryptionUtil;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
 public class RestoreBackupRequest {
 
-    public void restore_All(String username, String backupName, ObjectOutputStream objectOut) throws Exception {
+    /**
+     * Restaure une sauvegarde complète
+     *
+     * @param username   le nom de l'utilisateur
+     * @param backupName le nom de la sauvegarde
+     * @param objectOut  le flux de sortie
+     */
+    public void fullRestore(String username, String backupName, ObjectOutputStream objectOut) throws Exception {
         Path backupDirectory = Paths.get("./users", username, backupName);
         if (Files.exists(backupDirectory)) {
             SecretKey key = getKeyForBackup(backupName);
             decryptFilesInDirectory(backupDirectory, key);
             sendFilesInDirectory(backupDirectory, objectOut);
-            reencryptFilesInDirectory(backupDirectory, key);
-            System.out.println("Restore ALL");
+            encryptFilesInDirectory(backupDirectory, key);
+            System.out.println("Starting full restore for user: " + username + " with name: " + backupName);
         } else {
             System.out.println("No backup found for user: " + username + " with name: " + backupName);
         }
     }
 
-    public void restore_Partial(String username, List<String> filesToRestore, String backupName, ObjectOutputStream objectOut) throws Exception {
+    /**
+     * Restaure une sauvegarde partielle
+     *
+     * @param username       le nom de l'utilisateur
+     * @param filesToRestore la liste des fichiers à restaurer
+     * @param backupName     le nom de la sauvegarde
+     * @param objectOut      le flux de sortie
+     */
+    public void partialRestore(String username, List<String> filesToRestore, String backupName, ObjectOutputStream objectOut) throws Exception {
         Path backupDirectory = Paths.get("./users", username, backupName);
         SecretKey key = getKeyForBackup(backupName);
 
@@ -40,19 +52,29 @@ public class RestoreBackupRequest {
                 Files.deleteIfExists(decryptedFile);
             }
         }
-
-        System.out.println("Restore Partial");
+        System.out.println("Starting partial restore for user: " + username + " with name: " + backupName);
         objectOut.writeObject("RESTORE_COMPLETE");
         objectOut.flush();
     }
 
-
+    /**
+     * Déchiffre un fichier individuel
+     *
+     * @param file le fichier à déchiffrer
+     * @param key la clé de chiffrement
+     */
     private Path decryptIndividualFile(Path file, SecretKey key) throws Exception {
         Path tempDecryptedFile = Files.createTempFile("decrypted_", null);
         EncryptionUtil.decryptFile(key, file.toFile(), tempDecryptedFile.toFile());
         return tempDecryptedFile;
     }
 
+    /**
+     * Envoie tous les fichiers dans un répertoire
+     *
+     * @param directory le répertoire à envoyer
+     * @param objectOut le flux de sortie
+     */
     private void sendFilesInDirectory(Path directory, ObjectOutputStream objectOut) throws IOException {
         Files.walkFileTree(directory, new SimpleFileVisitor<>() {
             @Override
@@ -66,6 +88,13 @@ public class RestoreBackupRequest {
         objectOut.flush();
     }
 
+    /**
+     * Envoie un fichier
+     *
+     * @param file le fichier à envoyer
+     * @param relativePath le chemin relatif du fichier
+     * @param objectOut le flux de sortie
+     */
     private void sendFile(Path file, String relativePath, ObjectOutputStream objectOut) throws IOException {
         if (Files.exists(file)) {
             objectOut.writeObject(relativePath);
@@ -82,12 +111,22 @@ public class RestoreBackupRequest {
         }
     }
 
-    private SecretKey getKeyForBackup(String backupName) throws IOException, URISyntaxException {
-        URL resourceUrl = RestoreBackupRequest.class.getClassLoader().getResource("key/backup_keys.csv");
-        if (resourceUrl == null) {
-            throw new IllegalStateException("Fichier 'backup_keys.csv' non trouvé dans les ressources");
+    /**
+     * Récupère la clé de chiffrement d'une sauvegarde
+     *
+     * @param backupName le nom de la sauvegarde
+     * @return la clé de chiffrement
+     */
+    private SecretKey getKeyForBackup(String backupName) throws IOException {
+        // Chemin relatif vers le fichier 'backup_keys.csv' dans le dossier 'users/'
+        Path csvFilePath = Paths.get("users/backup_keys.csv");
+
+        // Vérifier si le fichier existe
+        if (!Files.exists(csvFilePath)) {
+            throw new IllegalStateException("Fichier 'backup_keys.csv' non trouvé dans le dossier 'users/'");
         }
-        Path csvFilePath = Paths.get(resourceUrl.toURI());
+
+        // Lire toutes les lignes du fichier CSV
         List<String> lines = Files.readAllLines(csvFilePath);
         String keyString = lines.stream()
                 .filter(line -> line.startsWith(backupName + ","))
@@ -95,15 +134,29 @@ public class RestoreBackupRequest {
                 .map(line -> line.split(",")[1])
                 .orElseThrow(() -> new IllegalStateException("Clé non trouvée pour la sauvegarde: " + backupName));
 
+        // Décoder et créer la clé secrète
         byte[] decodedKey = Base64.getDecoder().decode(keyString);
         SecretKey key = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
         return key;
     }
 
+    /**
+     * Déchiffre tous les fichiers dans un répertoire
+     *
+     * @param directory le répertoire à déchiffrer
+     * @param key la clé de chiffrement
+     */
     private void decryptFilesInDirectory(Path directory, SecretKey key) throws Exception {
         EncryptionUtil.processFolder(key, directory.toFile(), false);
     }
-    private void reencryptFilesInDirectory(Path directory, SecretKey key) throws Exception {
+
+    /**
+     * Chiffre tous les fichiers dans un répertoire
+     *
+     * @param directory le répertoire à chiffrer
+     * @param key la clé de chiffrement
+     */
+    private void encryptFilesInDirectory(Path directory, SecretKey key) throws Exception {
         EncryptionUtil.processFolder(key, directory.toFile(), true);
     }
 }

@@ -86,16 +86,14 @@ public class DeleteBackupRequest {
      */
     private void removeBackupFromCSV(String backupName) {
         try {
-            URL resourceUrl = DeleteBackupRequest.class.getClassLoader().getResource("key/backup_keys.csv");
-            if (resourceUrl == null) {
-                throw new IllegalStateException("Fichier 'backup_keys.csv' non trouvé dans les ressources");
+            Path csvFilePath = Paths.get("users/backup_keys.csv");
+            if (!Files.exists(csvFilePath)) {
+                throw new IllegalStateException("Fichier 'backup_keys.csv' non trouvé dans le dossier 'users/'");
             }
-            Path csvFilePath = Paths.get(resourceUrl.toURI());
             List<String> lines = Files.readAllLines(csvFilePath);
             List<String> updatedLines = lines.stream()
                     .filter(line -> !line.startsWith(backupName + ","))
                     .collect(Collectors.toList());
-
             Files.write(csvFilePath, updatedLines, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (Exception e) {
             System.err.println("Erreur lors de la mise à jour du fichier CSV: " + e.getMessage());

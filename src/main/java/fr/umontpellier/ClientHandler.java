@@ -82,13 +82,13 @@ class ClientHandler extends Thread {
                             case "RESTORE_ALL_REQUEST" -> {
                                 String backupName = (String) objectIn.readObject();
                                 RestoreBackupRequest restoreBackupRequest = new RestoreBackupRequest();
-                                restoreBackupRequest.restore_All(user.getUsername(), backupName, objectOut);
+                                restoreBackupRequest.fullRestore(user.getUsername(), backupName, objectOut);
                             }
                             case "RESTORE_PARTIAL_REQUEST" -> {
                                 String backupName = (String) objectIn.readObject(); // Recevoir le nom de la sauvegarde
                                 List<String> filesToRestore = (List<String>) objectIn.readObject();
                                 RestoreBackupRequest restorePartialRequest = new RestoreBackupRequest();
-                                restorePartialRequest.restore_Partial(user.getUsername(), filesToRestore, backupName, objectOut);
+                                restorePartialRequest.partialRestore(user.getUsername(), filesToRestore, backupName, objectOut);
                             }
                             case "DELETE_BACKUP_REQUEST" -> {
                                 String deleteBackupName = (String) objectIn.readObject();

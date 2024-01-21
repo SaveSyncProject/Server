@@ -138,13 +138,12 @@ public class CreateBackupRequest {
 
     private void saveKeyToCSV(String backupReference, String keyString) {
         try {
-            URL resourceUrl = CreateBackupRequest.class.getClassLoader().getResource("key");
-            if (resourceUrl == null) {
-                throw new IllegalStateException("Dossier 'Key' non trouvé dans les ressources");
-            }
-            Path resourcePath = Paths.get(resourceUrl.toURI());
-            Path csvFilePath = resourcePath.resolve("backup_keys.csv");
+            // Utiliser un chemin relatif pour pointer vers le dossier 'users/'
+            Path csvFilePath = Paths.get("users/backup_keys.csv");
             System.out.println("CSV file path: " + csvFilePath);
+
+            // Assurer que le dossier 'users/' existe
+            Files.createDirectories(csvFilePath.getParent());
 
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(csvFilePath.toFile(), true))) {
                 writer.write(backupReference + "," + keyString);
@@ -154,5 +153,4 @@ public class CreateBackupRequest {
             System.err.println("Erreur lors de l'écriture dans le fichier CSV: " + e.getMessage());
         }
     }
-
 }

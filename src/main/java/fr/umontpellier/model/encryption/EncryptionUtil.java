@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 public class EncryptionUtil {
 
@@ -16,12 +15,26 @@ public class EncryptionUtil {
     private static final int KEYSIZE = 128;
     private static final byte[] IV = new byte[16];
 
+    /**
+     * Génère une clé AES
+     *
+     * @return la clé générée
+     * @throws Exception
+     */
     public static SecretKey generateKey() throws Exception {
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
         keyGenerator.init(KEYSIZE, new SecureRandom());
         return keyGenerator.generateKey();
     }
 
+    /**
+     * Chiffre le contenu d'un dossier
+     *
+     * @param key        la clé de chiffrement
+     * @param folder     le dossier à chiffrer
+     * @param encrypt    true pour chiffrer, false pour déchiffrer
+     * @throws Exception
+     */
     public static void processFolder(SecretKey key, File folder, boolean encrypt) throws Exception {
         if (!folder.isDirectory()) {
             throw new IllegalArgumentException("Le paramètre doit être un dossier");
@@ -34,7 +47,7 @@ public class EncryptionUtil {
                     processFolder(key, file, encrypt);
                 } else {
                     File tempFile = new File(file.getAbsolutePath() + ".tmp");
-                    doCrypto(encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key, file, tempFile);
+                    encryptFile(encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key, file, tempFile);
                     if (!file.delete()) {
                         throw new Exception("Impossible de supprimer le fichier original: " + file.getName());
                     }
@@ -46,7 +59,16 @@ public class EncryptionUtil {
         }
     }
 
-    private static void doCrypto(int cipherMode, SecretKey key, File inputFile, File outputFile) throws Exception {
+    /**
+     * Chiffre un fichier
+     *
+     * @param cipherMode le mode de chiffrement
+     * @param key la clé de chiffrement
+     * @param inputFile le fichier à chiffrer
+     * @param outputFile le fichier de sortie
+     * @throws Exception
+     */
+    private static void encryptFile(int cipherMode, SecretKey key, File inputFile, File outputFile) throws Exception {
         Cipher cipher = Cipher.getInstance(ALGORITHM);
         IvParameterSpec ivParameterSpec = new IvParameterSpec(IV);
         cipher.init(cipherMode, key, ivParameterSpec);
@@ -68,12 +90,15 @@ public class EncryptionUtil {
         }
     }
 
+    /**
+     * Déchiffre un fichier
+     *
+     * @param key la clé de chiffrement
+     * @param inputFile le fichier à déchiffrer
+     * @param outputFile le fichier de sortie
+     * @throws Exception
+     */
     public static void decryptFile(SecretKey key, File inputFile, File outputFile) throws Exception {
-        doCrypto(Cipher.DECRYPT_MODE, key, inputFile, outputFile);
+        encryptFile(Cipher.DECRYPT_MODE, key, inputFile, outputFile);
     }
-
-    public static void encryptFile(SecretKey key, File inputFile, File outputFile) throws Exception {
-        doCrypto(Cipher.ENCRYPT_MODE, key, inputFile, outputFile);
-    }
-
 }
