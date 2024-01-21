@@ -44,7 +44,7 @@ public class ServerApplication {
 
             while (true) {
                 SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-                new ClientHandler(sslSocket).start(); // Assurez-vous que fr.umontpellier.ClientHandler utilise SSLSocket
+                new ClientHandler(sslSocket).start();
             }
         } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | UnrecoverableKeyException | KeyManagementException e) {
             e.printStackTrace();

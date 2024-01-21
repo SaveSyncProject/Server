@@ -82,12 +82,13 @@ class ClientHandler extends Thread {
                             case "RESTORE_ALL_REQUEST" -> {
                                 String backupName = (String) objectIn.readObject();
                                 RestoreBackupRequest restoreBackupRequest = new RestoreBackupRequest();
-                                restoreBackupRequest.handleRestoreRequest(user.getUsername(), backupName, objectOut);
+                                restoreBackupRequest.fullRestore(user.getUsername(), backupName, objectOut);
                             }
                             case "RESTORE_PARTIAL_REQUEST" -> {
+                                String backupName = (String) objectIn.readObject(); // Recevoir le nom de la sauvegarde
                                 List<String> filesToRestore = (List<String>) objectIn.readObject();
                                 RestoreBackupRequest restorePartialRequest = new RestoreBackupRequest();
-                                restorePartialRequest.restoreFiles(user.getUsername(), filesToRestore, objectOut);
+                                restorePartialRequest.partialRestore(user.getUsername(), filesToRestore, backupName, objectOut);
                             }
                             case "DELETE_BACKUP_REQUEST" -> {
                                 String deleteBackupName = (String) objectIn.readObject();
@@ -125,6 +126,8 @@ class ClientHandler extends Thread {
         } catch (IOException | ClassNotFoundException e) {
             System.out.println("Error while handling client request: " + e.getMessage());
             e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
             if (clientSocket != null && !clientSocket.isClosed()) {
                 try {

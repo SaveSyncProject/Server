@@ -2,18 +2,23 @@ package fr.umontpellier.model.request;
 
 import fr.umontpellier.model.Backup;
 
+import javax.crypto.SecretKey;
 import java.io.*;
+import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import fr.umontpellier.model.encryption.EncryptionUtil;
+
 
 public class CreateBackupRequest {
 
@@ -31,10 +36,21 @@ public class CreateBackupRequest {
 
         createDirectory(backupRoot);
 
+        String backupName = createUnzippedDirectoryName(directoryPath);
         Path zipFilePath = createZipFilePath(directoryPath, backupRoot);
         zipDirectory(directoryPath, extensions, zipFilePath);
-        unzipBackup(zipFilePath, backupRoot.resolve(createUnzippedDirectoryName(directoryPath)));
+        unzipBackup(zipFilePath, backupRoot.resolve(backupName));
+        Path backupDirectory = backupRoot.resolve(backupName);
         deleteFile(zipFilePath);
+
+        try {
+            SecretKey key = EncryptionUtil.generateKey();
+            String keyString = Base64.getEncoder().encodeToString(key.getEncoded());
+            saveKeyToCSV(backupName, keyString);
+            EncryptionUtil.processFolder(key, backupDirectory.toFile(), true); // Encrypter le dossier de sauvegarde
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void createDirectory(Path directory) {
@@ -49,7 +65,7 @@ public class CreateBackupRequest {
 
     private Path createZipFilePath(Path directoryPath, Path backupRoot) {
         String timestamp = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "-"
-                + LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm"));
+                + LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm-ss"));
         String fileName = directoryPath.getFileName().toString() + "-" + timestamp + "_backup.zip";
         return backupRoot.resolve(fileName);
     }
@@ -80,7 +96,7 @@ public class CreateBackupRequest {
 
     private String createUnzippedDirectoryName(Path directoryPath) {
         String timestamp = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "-"
-                + LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm"));
+                + LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm-ss"));
         return directoryPath.getFileName().toString() + "-" + timestamp + "_backup";
     }
 
@@ -117,6 +133,24 @@ public class CreateBackupRequest {
             Files.deleteIfExists(file);
         } catch (IOException e) {
             System.err.println("Error while deleting file: " + file + " - " + e.getMessage());
+        }
+    }
+
+    private void saveKeyToCSV(String backupReference, String keyString) {
+        try {
+            // Utiliser un chemin relatif pour pointer vers le dossier 'users/'
+            Path csvFilePath = Paths.get("users/backup_keys.csv");
+            System.out.println("CSV file path: " + csvFilePath);
+
+            // Assurer que le dossier 'users/' existe
+            Files.createDirectories(csvFilePath.getParent());
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(csvFilePath.toFile(), true))) {
+                writer.write(backupReference + "," + keyString);
+                writer.newLine();
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors de l'écriture dans le fichier CSV: " + e.getMessage());
         }
     }
 }
