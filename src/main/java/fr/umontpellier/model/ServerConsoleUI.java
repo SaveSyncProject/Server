@@ -12,6 +12,7 @@ public class ServerConsoleUI {
         initializeUI();
     }
 
+    // Initialisation de l'interface graphique
     public void initializeUI() {
         JFrame frame = new JFrame("Server Console");
         textArea = new JTextArea(30, 50);
@@ -22,15 +23,17 @@ public class ServerConsoleUI {
         redirectSystemStreams();
     }
 
+    // Configuration du JTextArea
     private void setupTextArea() {
         textArea.setEditable(false);
         textArea.setBackground(new Color(30, 30, 30)); // Gris foncé
         textArea.setForeground(Color.WHITE);
         textArea.setFont(new Font("Consolas", Font.PLAIN, 14));
-        textArea.setText(generateAsciiArt());
+        textArea.setText(setupAsciiBanner());
     }
 
-    private String generateAsciiArt() {
+    // Configuration de la banner ASCII
+    private String setupAsciiBanner() {
         return " ____                       ____                      \n" +
                 "/ ___|   __ _ __   __  ___ / ___|  _   _  _ __    ___ \n" +
                 "\\___ \\  / _` |\\ \\ / / / _ \\\\___ \\ | | | || '_ \\  / __|\n" +
@@ -39,15 +42,20 @@ public class ServerConsoleUI {
                 "                                   |___/              \n\n";
     }
 
+    /** Configuration de la fenêtre
+     *
+     * @param frame
+     */
     private void setupFrame(JFrame frame) {
         frame.setTitle("SaveSync Server");
-        // frame.setIconImage(new ImageIcon(ServerApplication.class.getResource("/img/icon.png")).getImage());
+        frame.setIconImage(new ImageIcon(ServerConsoleUI.class.getResource("/img/icon.png")).getImage());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(578, 455);
         frame.setResizable(false);
         frame.setVisible(true);
     }
 
+    // Redirection des sorties système vers le JTextArea
     private void redirectSystemStreams() {
         PrintStream printStream = new PrintStream(new CustomOutputStream(textArea));
         System.setOut(printStream);
