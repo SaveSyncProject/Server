@@ -50,7 +50,7 @@ public class ServerApplication {
             SSLServerSocketFactory sslServerSocketFactory = sslContext.getServerSocketFactory();
             SSLServerSocket sslServerSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket(port);
 
-            System.out.println("Server is listening on port " + port + " and IP address " + InetAddress.getLocalHost().getHostAddress());
+            System.out.println("Server is listening on " + InetAddress.getLocalHost().getHostAddress() + ":" + port);
 
             while (true) {
                 SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();

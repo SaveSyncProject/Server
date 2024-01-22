@@ -21,5 +21,4 @@ public class LDAPConnection {
             return false;
         }
     }
-
 }
