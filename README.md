@@ -24,13 +24,16 @@ docker-compose up -d
 
 ![dockerlancement.png](src%2Fmain%2Fresources%2Fimg%2Fdockerlancement.png)
 
-Un fichier de configuration est déja présent dans le LDAP pour avoir deux utilisateurs :
+Un fichier de configuration est déja présent dans le LDAP pour l'authentification des utilisateurs.
 
-- ggonfiantini
-- afrache
+- admin / admin
 
+## Lancement du serveur
 
+Le serveur dispose d'une interface graphique recensant les informations le concernant.
+Pour lancer le serveur, il suffit d'exécuter le fichier "Server.jar".
 
+![SaveSyncServerGUI.png](src/main/resources/img/SaveSyncServerGUI.png)
 
 ## Étapes suivies pour la sécurisation SSL (Côté serveur)
 
@@ -163,6 +166,6 @@ gonfiantinig@DESKTOP-PGLUUA7:/mnt/c/Users/Gaetan/OneDrive - umontpellier.fr/Cour
 
 ## Intégration du SSL dans le code
 
-Après toutes ces étapes effectuées, les keystores sont prêts à être utilisés dans le code.
+Une fois ces étapes effectuées, les keystores sont prêts à être utilisés dans le code.
 
 
