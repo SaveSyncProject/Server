@@ -1,20 +1,24 @@
 package fr.umontpellier;
 
 import javax.net.ssl.*;
-import java.io.*;
+import javax.swing.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.URL;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.KeyStoreException;
-import java.security.UnrecoverableKeyException;
-import java.security.KeyManagementException;
+import java.security.*;
 import java.security.cert.CertificateException;
+import fr.umontpellier.model.ServerConsoleUI;
 
 public class ServerApplication {
     public static void main(String[] args) {
-        int port = 1234;
 
+        // Initialisation de l'interface utilisateur
+        SwingUtilities.invokeLater(ServerConsoleUI::new);
+
+        // Configuration du serveur
+        int port = 1234;
         try {
             // Récupérer le chemin du fichier keystore.jks
             URL keystoreResource = ServerApplication.class.getClassLoader().getResource("ssl/server/mySrvKeystore.jks");

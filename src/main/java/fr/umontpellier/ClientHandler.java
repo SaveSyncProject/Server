@@ -125,7 +125,6 @@ class ClientHandler extends Thread {
 
         } catch (IOException | ClassNotFoundException e) {
             System.out.println("Error while handling client request: " + e.getMessage());
-            e.printStackTrace();
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -133,7 +132,7 @@ class ClientHandler extends Thread {
                 try {
                     clientSocket.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    System.err.println("Error while closing client socket: " + e.getMessage());
                 }
             }
             if (user != null) {
