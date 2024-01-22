@@ -10,12 +10,17 @@ import java.security.cert.CertificateException;
 import java.util.Properties;
 
 import fr.umontpellier.model.ServerConsoleUI;
+import fr.umontpellier.model.authentication.LDAPConnection;
 
 public class ServerApplication {
 
     private static final String PROPERTIES_FILE = "server.properties";
     private static final String PORT_PROPERTY = "server.port";
     private static final int DEFAULT_PORT = 1234;
+    private static final String LDAP_HOST_PROPERTY = "ldap.host";
+    private static final String LDAP_PORT_PROPERTY = "ldap.port";
+    private static final String DEFAULT_LDAP_HOST = "localhost";
+    private static final int DEFAULT_LDAP_PORT = 389;
 
     public static void main(String[] args) {
 
@@ -23,7 +28,13 @@ public class ServerApplication {
         SwingUtilities.invokeLater(ServerConsoleUI::new);
 
         // Configuration du serveur
-        int port = loadPort();
+        Properties properties = loadProperties();
+
+        int port = Integer.parseInt(properties.getProperty(PORT_PROPERTY, String.valueOf(DEFAULT_PORT)));
+        String ldapHost = properties.getProperty(LDAP_HOST_PROPERTY, DEFAULT_LDAP_HOST);
+        int ldapPort = Integer.parseInt(properties.getProperty(LDAP_PORT_PROPERTY, String.valueOf(DEFAULT_LDAP_PORT)));
+
+        LDAPConnection.configure(ldapHost, ldapPort);
 
         try {
             // Récupérer le chemin du fichier keystore.jks
@@ -62,26 +73,33 @@ public class ServerApplication {
         }
     }
 
-    private static int loadPort() {
+    /**
+     * Méthode pour charger les propriétés du serveur
+     *
+     * @return les propriétés du serveur
+     */
+    private static Properties loadProperties() {
         Properties properties = new Properties();
         File propertiesFile = new File(PROPERTIES_FILE);
+
         if (!propertiesFile.exists()) {
             properties.setProperty(PORT_PROPERTY, String.valueOf(DEFAULT_PORT));
+            properties.setProperty(LDAP_HOST_PROPERTY, DEFAULT_LDAP_HOST);
+            properties.setProperty(LDAP_PORT_PROPERTY, String.valueOf(DEFAULT_LDAP_PORT));
+
             try (FileOutputStream out = new FileOutputStream(PROPERTIES_FILE)) {
                 properties.store(out, "Server Properties");
             } catch (IOException e) {
                 System.err.println("Error creating properties file: " + e.getMessage());
-                return DEFAULT_PORT;
             }
         } else {
             try (FileInputStream in = new FileInputStream(PROPERTIES_FILE)) {
                 properties.load(in);
-                return Integer.parseInt(properties.getProperty(PORT_PROPERTY, String.valueOf(DEFAULT_PORT)));
-            } catch (IOException | NumberFormatException e) {
+            } catch (IOException e) {
                 System.err.println("Error reading properties file: " + e.getMessage());
-                return DEFAULT_PORT;
             }
         }
-        return DEFAULT_PORT;
+        return properties;
     }
+
 }
