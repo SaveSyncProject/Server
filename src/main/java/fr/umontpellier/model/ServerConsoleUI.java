@@ -17,10 +17,10 @@ public class ServerConsoleUI {
         JFrame frame = new JFrame("Server Console");
         textArea = new JTextArea(30, 50);
         setupTextArea();
+        redirectSystemStreams();
         JScrollPane scrollPane = new JScrollPane(textArea);
         frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
         setupFrame(frame);
-        redirectSystemStreams();
     }
 
     // Configuration du JTextArea
