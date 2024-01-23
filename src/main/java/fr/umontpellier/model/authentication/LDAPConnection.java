@@ -4,6 +4,19 @@ import com.unboundid.ldap.sdk.LDAPException;
 
 public class LDAPConnection {
 
+    private static String ldapHost = "localhost";
+    private static int ldapPort = 389;
+
+    /** Méthode pour configurer l'adresse et le port du serveur LDAP
+     *
+     * @param host
+     * @param port
+     */
+    public static void configure(String host, int port) {
+        ldapHost = host;
+        ldapPort = port;
+    }
+
     /**
      * Méthode pour authentifier un utilisateur avec LDAP
      * @param username nom d'utilisateur
@@ -12,7 +25,7 @@ public class LDAPConnection {
      */
     public static boolean authenticateWithLDAP(String username, String password) {
         try {
-            com.unboundid.ldap.sdk.LDAPConnection connection = new com.unboundid.ldap.sdk.LDAPConnection("localhost", 389);
+            com.unboundid.ldap.sdk.LDAPConnection connection = new com.unboundid.ldap.sdk.LDAPConnection(ldapHost, ldapPort);
             connection.bind("uid=" + username + ",ou=users,dc=example,dc=org", password);
             connection.close();
             return true;
@@ -21,5 +34,4 @@ public class LDAPConnection {
             return false;
         }
     }
-
 }

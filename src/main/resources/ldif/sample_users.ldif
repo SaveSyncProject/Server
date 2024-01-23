@@ -11,15 +11,6 @@ givenName: Admin
 userPassword: admin
 mail: admin@example.com
 
-dn: uid=fgarcia,ou=users,dc=example,dc=org
-objectClass: inetOrgPerson
-uid: fgarcia
-cn: Francis Garcia
-sn: Garcia
-givenName: Francis
-userPassword: admin
-mail: francis.garcia@example.com
-
 dn: uid=ggonfiantini,ou=users,dc=example,dc=org
 objectClass: inetOrgPerson
 uid: ggonfiantini
