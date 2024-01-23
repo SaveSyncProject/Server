@@ -24,7 +24,7 @@ public class ServerApplication {
 
     public static void main(String[] args) {
 
-        // Initialisation de l'interface utilisateur
+        // Initialisation de l'interface utilisateur (optionnel)
         SwingUtilities.invokeLater(ServerConsoleUI::new);
 
         // Configuration du serveur
