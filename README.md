@@ -18,7 +18,7 @@
 
 1. Clone the Git repository
 ```
-git clone https://github.com/SaveSync-App/Client.git
+git clone https://github.com/SaveSync-App/Server.git
 ```
 
 2. Configure JavaFX
