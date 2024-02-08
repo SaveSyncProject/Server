@@ -1,31 +1,46 @@
-package fr.umontpellier.model.request;
+package fr.umontpellier.model.request.backup;
 
 import java.io.IOException;
-import java.net.URL;
+import java.io.ObjectOutputStream;
 import java.nio.file.*;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DeleteBackupRequest {
+import fr.umontpellier.model.request.Request;
 
-    /**
-     * Supprime une sauvegarde
-     *
-     * @param username   le nom de l'utilisateur
-     * @param backupName le nom de la sauvegarde
-     * @return true si la sauvegarde a été supprimée, false sinon
-     */
-    public boolean deleteBackup(String username, String backupName) {
-        Path backupDir = Paths.get("./users", username, backupName);
-        boolean isDeleted = deleteDirectory(backupDir);
+public class DeleteBackupRequest extends Request{
 
-        if (isDeleted) {
-            removeBackupFromCSV(backupName);
+    private final String username;
+    private final String backupName;
+    private final ObjectOutputStream objectOut;
+
+    public DeleteBackupRequest(String username, String backupName, ObjectOutputStream objectOut) {
+        this.username = username;
+        this.backupName = backupName;
+        this.objectOut = objectOut;
+    }
+
+    @Override
+    public void execute() {
+        try {
+            System.out.println("Starting backup deletion for user: " + username);
+            Path backupDir = Paths.get("./users", username, backupName);
+            boolean isDeleted = deleteDirectory(backupDir);
+            if (isDeleted) {
+                removeBackupFromCSV(backupName);
+                System.out.println("Backup deleted successfully");
+                this.objectOut.writeObject("SUCCESS");
+            }
+            else{
+                System.out.println("Error while deleting backup");
+                this.objectOut.writeObject("ERROR");
+            }
+            this.objectOut.flush();
+        } catch (IOException e) {
+            System.err.println("Error while deleting backup: " + e.getMessage());
         }
-
-        return isDeleted;
     }
 
     /**
@@ -47,35 +62,6 @@ public class DeleteBackupRequest {
             return !Files.exists(directory);
         } catch (IOException e) {
             System.err.println("Error while deleting directory: " + directory + " - " + e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Supprime les fichiers d'une sauvegarde
-     *
-     * @param username      le nom de l'utilisateur
-     * @param filesToDelete la liste des fichiers à supprimer
-     * @return true si tous les fichiers ont été supprimés, false sinon
-     */
-    public boolean deleteFiles(String username, List<String> filesToDelete) {
-        Path userDir = Paths.get("./users", username);
-        return filesToDelete.stream()
-                .map(userDir::resolve)
-                .allMatch(this::deleteFile);
-    }
-
-    /**
-     * Supprime un fichier
-     *
-     * @param path le chemin du fichier à supprimer
-     * @return true si le fichier a été supprimé, false sinon
-     */
-    private boolean deleteFile(Path path) {
-        try {
-            return Files.deleteIfExists(path);
-        } catch (IOException e) {
-            System.err.println("Error while deleting file: " + path + " - " + e.getMessage());
             return false;
         }
     }

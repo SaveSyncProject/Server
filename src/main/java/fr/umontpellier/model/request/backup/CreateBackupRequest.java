@@ -1,48 +1,47 @@
-package fr.umontpellier.model.request;
+package fr.umontpellier.model.request.backup;
 
 import fr.umontpellier.model.Backup;
 
 import javax.crypto.SecretKey;
 import java.io.*;
-import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import fr.umontpellier.model.encryption.EncryptionUtil;
+import fr.umontpellier.model.request.Request;
 
 
-public class CreateBackupRequest {
+public class CreateBackupRequest extends Request {
 
-    /**
-     * Crée un dossier pour l'utilisateur
-     *
-     * @param backupDetails les informations de la sauvegarde
-     * @param username le nom de l'utilisateur
-     */
-    public void handleBackup(Backup backupDetails, String username) {
+private final String username;
+
+private final Backup backup;
+
+    public CreateBackupRequest(Backup backup, String username) {
+        this.backup = backup;
+        this.username = username;
+    }
+
+    @Override
+    public void execute() {
         System.out.println("Starting backup for user: " + username);
-        Path directoryPath = Paths.get(backupDetails.getDirectoryPath());
-        List<String> extensions = backupDetails.getFileExtensions();
+        Path directoryPath = Paths.get(this.backup.getDirectoryPath());
+        List<String> extensions = this.backup.getFileExtensions();
         Path backupRoot = Paths.get("./users", username);
-
         createDirectory(backupRoot);
-
         String backupName = createUnzippedDirectoryName(directoryPath);
         Path zipFilePath = createZipFilePath(directoryPath, backupRoot);
         zipDirectory(directoryPath, extensions, zipFilePath);
         unzipBackup(zipFilePath, backupRoot.resolve(backupName));
         Path backupDirectory = backupRoot.resolve(backupName);
         deleteFile(zipFilePath);
-
         try {
             SecretKey key = EncryptionUtil.generateKey();
             String keyString = Base64.getEncoder().encodeToString(key.getEncoded());
@@ -72,12 +71,11 @@ public class CreateBackupRequest {
 
     private void zipDirectory(Path directoryPath, List<String> extensions, Path zipFilePath) {
         try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(zipFilePath.toFile()))) {
-            Set<Path> addedDirs = new HashSet<>();
             Files.walkFileTree(directoryPath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     if (extensions.stream().anyMatch(ext -> file.toString().endsWith(ext))) {
-                        addToZip(file, directoryPath, zipOut);
+                        zipFile(file, directoryPath, zipOut);
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -87,7 +85,7 @@ public class CreateBackupRequest {
         }
     }
 
-    private void addToZip(Path file, Path basePath, ZipOutputStream zipOut) throws IOException {
+    private void zipFile(Path file, Path basePath, ZipOutputStream zipOut) throws IOException {
         ZipEntry zipEntry = new ZipEntry(basePath.relativize(file).toString());
         zipOut.putNextEntry(zipEntry);
         Files.copy(file, zipOut);
