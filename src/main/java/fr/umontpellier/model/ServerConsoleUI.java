@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 public class ServerConsoleUI {
     private JTextArea textArea;
@@ -65,6 +67,7 @@ public class ServerConsoleUI {
     // Classe interne pour rediriger les sorties système vers le JTextArea
     private static class CustomOutputStream extends OutputStream {
         private JTextArea textArea;
+        private StringBuilder sb = new StringBuilder(); // Accumuler les caractères jusqu'à un saut de ligne
 
         public CustomOutputStream(JTextArea textArea) {
             this.textArea = textArea;
@@ -72,8 +75,20 @@ public class ServerConsoleUI {
 
         @Override
         public void write(int b) {
-            textArea.append(String.valueOf((char) b));
-            textArea.setCaretPosition(textArea.getDocument().getLength());
+            if (b == '\r') return; // Ignorer le retour chariot sous Windows
+
+            if (b == '\n') {
+                String text = sb.toString() + "\n";
+                sb.setLength(0); // Réinitialiser le StringBuilder après avoir capturé la ligne
+
+                // Ajouter l'horodatage devant la ligne
+                String timeStamp = LocalTime.now().format(DateTimeFormatter.ofPattern("[HH:mm:ss]")).replaceAll("\\s", "");
+                textArea.append("[" + timeStamp + "] " + text);
+
+                textArea.setCaretPosition(textArea.getDocument().getLength());
+            } else {
+                sb.append((char) b);
+            }
         }
     }
 }
