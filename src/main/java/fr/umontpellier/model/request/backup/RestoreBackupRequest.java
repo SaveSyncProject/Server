@@ -1,6 +1,7 @@
 package fr.umontpellier.model.request.backup;
 
 import fr.umontpellier.model.encryption.EncryptionUtil;
+import fr.umontpellier.model.logging.LoggingService;
 import fr.umontpellier.model.request.Request;
 
 import javax.crypto.SecretKey;
@@ -10,6 +11,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Base64;
 import java.util.List;
+import java.util.logging.LoggingMXBean;
 
 public class RestoreBackupRequest extends Request {
 
@@ -32,50 +34,13 @@ private final ObjectOutputStream objectOut;
                 decryptFilesInDirectory(backupDirectory, key);
                 sendFilesInDirectory(backupDirectory, this.objectOut);
                 encryptFilesInDirectory(backupDirectory, key);
-                System.out.println("Starting full restore for user: " + this.username + " with name: " + this.backupName);
+                LoggingService.getLogger().log("Starting full restore for user: " + this.username + " with name: " + this.backupName);
             } else {
-                System.out.println("No backup found for user: " + this.username + " with name: " + this.backupName);
+                LoggingService.getLogger().log("No backup found for user: " + this.username + " with name: " + this.backupName);
             }
         } catch (Exception e) {
-            System.out.println("Error while restoring backup: " + e.getMessage());
+            LoggingService.getLogger().log("Error while restoring backup: " + e.getMessage());
         }
-    }
-
-    /**
-     * Restaure une sauvegarde partielle
-     *
-     * @param username       le nom de l'utilisateur
-     * @param filesToRestore la liste des fichiers à restaurer
-     * @param backupName     le nom de la sauvegarde
-     * @param objectOut      le flux de sortie
-     */
-    public void partialRestore(String username, List<String> filesToRestore, String backupName, ObjectOutputStream objectOut) throws Exception {
-        Path backupDirectory = Paths.get("./users", username, backupName);
-        SecretKey key = getKeyForBackup(backupName);
-
-        for (String filePath : filesToRestore) {
-            Path fileInBackup = backupDirectory.resolve(filePath);
-            if (Files.exists(fileInBackup)) {
-                Path decryptedFile = decryptIndividualFile(fileInBackup, key);
-                sendFile(decryptedFile, filePath, objectOut);
-                Files.deleteIfExists(decryptedFile);
-            }
-        }
-        System.out.println("Starting partial restore for user: " + username + " with name: " + backupName);
-        objectOut.writeObject("RESTORE_COMPLETE");
-        objectOut.flush();
-    }
-
-    /**
-     * Déchiffre un fichier individuel
-     *
-     * @param file le fichier à déchiffrer
-     * @param key la clé de chiffrement
-     */
-    private Path decryptIndividualFile(Path file, SecretKey key) throws Exception {
-        Path tempDecryptedFile = Files.createTempFile("decrypted_", null);
-        EncryptionUtil.decryptFile(key, file.toFile(), tempDecryptedFile.toFile());
-        return tempDecryptedFile;
     }
 
     /**

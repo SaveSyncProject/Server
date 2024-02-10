@@ -14,6 +14,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import fr.umontpellier.model.encryption.EncryptionUtil;
+import fr.umontpellier.model.logging.LoggingService;
 import fr.umontpellier.model.request.Request;
 
 public class RestoreFileRequest extends Request {
@@ -43,11 +44,11 @@ public class RestoreFileRequest extends Request {
                     Files.deleteIfExists(decryptedFile);
                 }
             }
-            System.out.println("Starting partial restore for user: " + username + " with name: " + backupName);
+            LoggingService.getLogger().log("Starting partial restore for user: " + username + " with name: " + backupName);
             objectOut.writeObject("RESTORE_COMPLETE");
             objectOut.flush();
         } catch (Exception e) {
-            System.out.println("Error while restoring backup: " + e.getMessage());
+            LoggingService.getLogger().log("Error while restoring backup: " + e.getMessage());
         }
     }
 

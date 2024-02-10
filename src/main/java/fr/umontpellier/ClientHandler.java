@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -14,6 +16,7 @@ import javax.net.ssl.SSLSocket;
 import fr.umontpellier.model.Backup;
 import fr.umontpellier.model.User;
 import fr.umontpellier.model.authentication.LDAPConnection;
+import fr.umontpellier.model.logging.LoggingService;
 import fr.umontpellier.model.request.backup.CreateBackupRequest;
 import fr.umontpellier.model.request.backup.DeleteBackupRequest;
 import fr.umontpellier.model.request.backup.ReadBackupRequest;
@@ -51,14 +54,13 @@ class ClientHandler extends Thread {
                     synchronized (activeUsers) {
                         if (activeUsers.contains(user.getUsername())) {
                             objectOut.writeObject("User already connected.");
-                            System.out.println("Connection refused for user: " + user.getUsername());
+                            LoggingService.getLogger().log("Connection refused for user: " + user.getUsername());
                             return;
                         } else {
                             activeUsers.add(user.getUsername());
                         }
                     }
-
-                    System.out.println("Connection accepted for user: " + user.getUsername());
+                    LoggingService.getLogger().log("Connection accepted for user: " + user.getUsername());
                     objectOut.writeObject("OK");
 
                     createUserDirectory(user.getUsername());
@@ -103,10 +105,10 @@ class ClientHandler extends Thread {
                                 deleteFileRequest.execute();
                             }
                             case "END_CONNECTION" -> {
-                                System.out.println("Client closed connection.");
+                                LoggingService.getLogger().log("Client closed connection.");
                                 return;
                             }
-                            default -> System.out.println("Unknown request type: " + requestType);
+                            default -> LoggingService.getLogger().log("Unknown request type: " + requestType);
                         }
                     }
 
@@ -118,11 +120,11 @@ class ClientHandler extends Thread {
 
             if (!isAuthenticated) {
                 objectOut.writeObject("Nombre maximum de tentatives atteint. Connexion fermée.");
-                System.out.println("Connection refused for user: " + user.getUsername());
+                LoggingService.getLogger().log("Connection refused for user: " + user.getUsername());
             }
 
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Error while handling client request: " + e.getMessage());
+            LoggingService.getLogger().log("Error while handling client request: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -130,13 +132,13 @@ class ClientHandler extends Thread {
                 try {
                     clientSocket.close();
                 } catch (IOException e) {
-                    System.err.println("Error while closing client socket: " + e.getMessage());
+                    LoggingService.getLogger().log("Error while closing client socket: " + e.getMessage());
                 }
             }
             if (user != null) {
                 synchronized (activeUsers) {
                     activeUsers.remove(user.getUsername());
-                    System.out.println("User disconnected: " + user.getUsername());
+                    LoggingService.getLogger().log("User disconnected: " + user.getUsername());
                 }
             }
         }
@@ -152,9 +154,9 @@ class ClientHandler extends Thread {
         if (!userDirectory.exists()) {
             boolean isCreated = userDirectory.mkdirs();
             if (isCreated) {
-                System.out.println("Folder created for user: " + username);
+                LoggingService.getLogger().log("User directory created for user: " + username);
             } else {
-                System.out.println("Error while creating folder for user: " + username);
+                LoggingService.getLogger().log("Error while creating user directory for user: " + username);
             }
         }
     }

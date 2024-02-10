@@ -15,6 +15,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import fr.umontpellier.model.encryption.EncryptionUtil;
+import fr.umontpellier.model.logging.LoggingService;
 import fr.umontpellier.model.request.Request;
 
 
@@ -31,7 +32,7 @@ private final Backup backup;
 
     @Override
     public void execute() {
-        System.out.println("Starting backup for user: " + username);
+        LoggingService.getLogger().log("Starting backup for user: " + username);
         Path directoryPath = Paths.get(this.backup.getDirectoryPath());
         List<String> extensions = this.backup.getFileExtensions();
         Path backupRoot = Paths.get("./users", username);
@@ -57,7 +58,7 @@ private final Backup backup;
             try {
                 Files.createDirectories(directory);
             } catch (IOException e) {
-                System.err.println("Error while creating directory: " + directory + " - " + e.getMessage());
+                LoggingService.getLogger().log("Error while creating directory: " + directory + " - " + e.getMessage());
             }
         }
     }
@@ -81,7 +82,7 @@ private final Backup backup;
                 }
             });
         } catch (IOException e) {
-            System.err.println("Error while zipping directory: " + directoryPath + " - " + e.getMessage());
+            LoggingService.getLogger().log("Error while zipping directory: " + directoryPath + " - " + e.getMessage());
         }
     }
 
@@ -112,7 +113,7 @@ private final Backup backup;
                 zipInputStream.closeEntry();
             }
         } catch (IOException e) {
-            System.err.println("Erreur lors de la décompression du fichier zip: " + e.getMessage());
+            LoggingService.getLogger().log("Error while unzipping backup: " + e.getMessage());
         }
     }
 
@@ -130,7 +131,7 @@ private final Backup backup;
         try {
             Files.deleteIfExists(file);
         } catch (IOException e) {
-            System.err.println("Error while deleting file: " + file + " - " + e.getMessage());
+            LoggingService.getLogger().log("Error while deleting file: " + file + " - " + e.getMessage());
         }
     }
 
@@ -138,7 +139,7 @@ private final Backup backup;
         try {
             // Utiliser un chemin relatif pour pointer vers le dossier 'users/'
             Path csvFilePath = Paths.get("users/backup_keys.csv");
-            System.out.println("CSV file path: " + csvFilePath);
+            LoggingService.getLogger().log("CSV file path: " + csvFilePath);
 
             // Assurer que le dossier 'users/' existe
             Files.createDirectories(csvFilePath.getParent());
@@ -148,7 +149,7 @@ private final Backup backup;
                 writer.newLine();
             }
         } catch (Exception e) {
-            System.err.println("Erreur lors de l'écriture dans le fichier CSV: " + e.getMessage());
+            LoggingService.getLogger().log("Error while writing to CSV file: " + e.getMessage());
         }
     }
 }

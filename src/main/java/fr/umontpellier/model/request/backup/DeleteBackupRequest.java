@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import fr.umontpellier.model.logging.LoggingService;
 import fr.umontpellier.model.request.Request;
 
 public class DeleteBackupRequest extends Request{
@@ -25,21 +26,21 @@ public class DeleteBackupRequest extends Request{
     @Override
     public void execute() {
         try {
-            System.out.println("Starting backup deletion for user: " + username);
+            LoggingService.getLogger().log("Starting backup deletion for user: " + username);
             Path backupDir = Paths.get("./users", username, backupName);
             boolean isDeleted = deleteDirectory(backupDir);
             if (isDeleted) {
                 removeBackupFromCSV(backupName);
-                System.out.println("Backup deleted successfully");
+                LoggingService.getLogger().log("Backup deleted successfully for user: " + username);
                 this.objectOut.writeObject("SUCCESS");
             }
             else{
-                System.out.println("Error while deleting backup");
+                LoggingService.getLogger().log("Error while deleting backup for user: " + username);
                 this.objectOut.writeObject("ERROR");
             }
             this.objectOut.flush();
         } catch (IOException e) {
-            System.err.println("Error while deleting backup: " + e.getMessage());
+            LoggingService.getLogger().log("Error while deleting backup: " + e.getMessage());
         }
     }
 
@@ -56,12 +57,12 @@ public class DeleteBackupRequest extends Request{
                         try {
                             Files.delete(path);
                         } catch (IOException e) {
-                            System.err.println("Error while deleting file: " + path + " - " + e.getMessage());
+                            LoggingService.getLogger().log("Error while deleting file: " + path + " - " + e.getMessage());
                         }
                     });
             return !Files.exists(directory);
         } catch (IOException e) {
-            System.err.println("Error while deleting directory: " + directory + " - " + e.getMessage());
+            LoggingService.getLogger().log("Error while deleting directory: " + directory + " - " + e.getMessage());
             return false;
         }
     }
@@ -82,7 +83,7 @@ public class DeleteBackupRequest extends Request{
                     .collect(Collectors.toList());
             Files.write(csvFilePath, updatedLines, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (Exception e) {
-            System.err.println("Erreur lors de la mise à jour du fichier CSV: " + e.getMessage());
+            LoggingService.getLogger().log("Error while updating CSV file: " + e.getMessage());
         }
     }
 }
