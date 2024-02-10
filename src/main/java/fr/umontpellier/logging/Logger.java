@@ -1,4 +1,4 @@
-package fr.umontpellier.model.logging;
+package fr.umontpellier.logging;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

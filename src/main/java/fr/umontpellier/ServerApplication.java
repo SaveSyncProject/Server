@@ -7,8 +7,8 @@ import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
 
+import fr.umontpellier.logging.LoggingService;
 import fr.umontpellier.model.authentication.LDAPConnection;
-import fr.umontpellier.model.logging.LoggingService;
 
 public class ServerApplication {
 

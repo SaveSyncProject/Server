@@ -1,5 +1,6 @@
 package fr.umontpellier.model.request.backup;
 
+import fr.umontpellier.logging.LoggingService;
 import fr.umontpellier.model.Backup;
 
 import javax.crypto.SecretKey;
@@ -15,7 +16,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import fr.umontpellier.model.encryption.EncryptionUtil;
-import fr.umontpellier.model.logging.LoggingService;
 import fr.umontpellier.model.request.Request;
 
 

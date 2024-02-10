@@ -1,4 +1,4 @@
-package fr.umontpellier.model.logging;
+package fr.umontpellier.logging;
 
 public class LoggerFactory {
     public static Logger getLogger(boolean isHeadless) {

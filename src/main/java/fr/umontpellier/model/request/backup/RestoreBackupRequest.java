@@ -1,7 +1,7 @@
 package fr.umontpellier.model.request.backup;
 
+import fr.umontpellier.logging.LoggingService;
 import fr.umontpellier.model.encryption.EncryptionUtil;
-import fr.umontpellier.model.logging.LoggingService;
 import fr.umontpellier.model.request.Request;
 
 import javax.crypto.SecretKey;

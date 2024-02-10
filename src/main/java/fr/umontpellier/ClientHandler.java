@@ -13,10 +13,10 @@ import java.util.Set;
 
 import javax.net.ssl.SSLSocket;
 
+import fr.umontpellier.logging.LoggingService;
 import fr.umontpellier.model.Backup;
 import fr.umontpellier.model.User;
 import fr.umontpellier.model.authentication.LDAPConnection;
-import fr.umontpellier.model.logging.LoggingService;
 import fr.umontpellier.model.request.backup.CreateBackupRequest;
 import fr.umontpellier.model.request.backup.DeleteBackupRequest;
 import fr.umontpellier.model.request.backup.ReadBackupRequest;

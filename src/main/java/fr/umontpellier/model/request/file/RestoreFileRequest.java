@@ -13,8 +13,8 @@ import java.util.List;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import fr.umontpellier.logging.LoggingService;
 import fr.umontpellier.model.encryption.EncryptionUtil;
-import fr.umontpellier.model.logging.LoggingService;
 import fr.umontpellier.model.request.Request;
 
 public class RestoreFileRequest extends Request {

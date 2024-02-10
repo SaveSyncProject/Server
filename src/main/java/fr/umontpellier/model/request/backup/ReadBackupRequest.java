@@ -6,7 +6,7 @@ import java.nio.file.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import fr.umontpellier.model.logging.LoggingService;
+import fr.umontpellier.logging.LoggingService;
 import fr.umontpellier.model.request.Request;
 
 public class ReadBackupRequest extends Request{
