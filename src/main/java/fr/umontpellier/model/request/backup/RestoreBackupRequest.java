@@ -11,7 +11,6 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Base64;
 import java.util.List;
-import java.util.logging.LoggingMXBean;
 
 public class RestoreBackupRequest extends Request {
 
