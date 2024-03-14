@@ -14,10 +14,12 @@ public class ServerApplication {
 
     public static void main(String[] args) {
 
-        int port = ApplicationConfig.getServerPort();
-        String ldapHost = ApplicationConfig.getLdapHost();
-        int ldapPort = ApplicationConfig.getLdapPort();
-                
+        ApplicationConfig config = new ApplicationConfig();
+
+        int port = config.getIntProperty("server.port", 1234);
+        String ldapHost = config.getProperty("ldap.host", "localhost");
+        int ldapPort = config.getIntProperty("ldap.port", 389);
+
         LDAPConnection.configure(ldapHost, ldapPort);
 
         try {
