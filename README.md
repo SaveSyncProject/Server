@@ -30,7 +30,7 @@ Ensure that the JavaFX SDK is installed and properly configured in your IDE or d
 The server has a graphical interface listing relevant information.
 Open your IDE and launch the server application or use the .jar file
 
-![SaveSyncServerGUI.png](src/main/resources/img/SaveSyncServerGUI.png)
+![SaveSyncServerGUI.png](src/main/resources/image/SaveSyncServerGUI.png)
 
 ### Launching the Client Application
 

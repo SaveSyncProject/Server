@@ -8,14 +8,14 @@ import java.util.Properties;
 
 public class ApplicationConfig {
     private static final String PROPERTIES_FILE = "server.properties";
+    private final Properties properties;
     private static final String PORT_PROPERTY = "server.port";
-    private static final String IS_HEADLESS_PROPERTY = "server.ui.headless";
+    private static final String UI_HEADLESS_PROPERTY = "server.ui.headless";
     private static final String LDAP_HOST_PROPERTY = "ldap.host";
     private static final String LDAP_PORT_PROPERTY = "ldap.port";
     private static final String DEFAULT_LDAP_HOST = "localhost";
     private static final int DEFAULT_LDAP_PORT = 389;
     private static final int DEFAULT_PORT = 1234;
-    private final Properties properties;
 
     public ApplicationConfig() {
         properties = new Properties();
@@ -41,7 +41,7 @@ public class ApplicationConfig {
         properties.setProperty(PORT_PROPERTY, String.valueOf(DEFAULT_PORT));
         properties.setProperty(LDAP_HOST_PROPERTY, DEFAULT_LDAP_HOST);
         properties.setProperty(LDAP_PORT_PROPERTY, String.valueOf(DEFAULT_LDAP_PORT));
-        properties.setProperty(IS_HEADLESS_PROPERTY, "false");
+        properties.setProperty(UI_HEADLESS_PROPERTY, "true");
     }
 
     private void saveProperties() {
@@ -52,25 +52,13 @@ public class ApplicationConfig {
         }
     }
 
-    public String getProperty(String key, String defaultValue) {
-        return properties.getProperty(key, defaultValue);
-    }
-
-    public int getIntProperty(String key, int defaultValue) {
-        String value = properties.getProperty(key);
-        if (value != null && !value.isEmpty()) {
-            try {
-                return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                System.err.println("Error parsing property " + key + " to int: " + e.getMessage());
-            }
-        }
-        return defaultValue;
+    public String getProperty(String key) {
+        return properties.getProperty(key);
     }
 
     public static boolean isHeadless() {
         ApplicationConfig config = new ApplicationConfig();
-        String headlessValue = config.getProperty(IS_HEADLESS_PROPERTY, "false");
+        String headlessValue = config.getProperty(UI_HEADLESS_PROPERTY);
         return Boolean.parseBoolean(headlessValue);
     }
 }
