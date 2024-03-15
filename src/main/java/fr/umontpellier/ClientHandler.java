@@ -87,7 +87,7 @@ class ClientHandler extends Thread {
                                 restoreBackupRequest.execute();
                             }
                             case "RESTORE_FILE" -> {
-                                String backupName = (String) objectIn.readObject(); // Recevoir le nom de la sauvegarde
+                                String backupName = (String) objectIn.readObject();
                                 List<String> filesToRestore = (List<String>) objectIn.readObject();
                                 RestoreFileRequest restorePartialRequest = new RestoreFileRequest(user.getUsername(), backupName, filesToRestore , objectOut);
                                 restorePartialRequest.execute();

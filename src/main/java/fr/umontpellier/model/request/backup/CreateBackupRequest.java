@@ -137,11 +137,9 @@ private final Backup backup;
 
     private void saveKeyToCSV(String backupReference, String keyString) {
         try {
-            // Utiliser un chemin relatif pour pointer vers le dossier 'users/'
             Path csvFilePath = Paths.get("users/backup_keys.csv");
             LoggingService.getLogger().log("CSV file path: " + csvFilePath);
 
-            // Assurer que le dossier 'users/' existe
             Files.createDirectories(csvFilePath.getParent());
 
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(csvFilePath.toFile(), true))) {

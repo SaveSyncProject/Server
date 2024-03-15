@@ -94,15 +94,12 @@ public class RestoreFileRequest extends Request {
      * @return la clé de chiffrement
      */
     private SecretKey getKeyForBackup(String backupName) throws IOException {
-        // Chemin relatif vers le fichier 'backup_keys.csv' dans le dossier 'users/'
         Path csvFilePath = Paths.get("users/backup_keys.csv");
 
-        // Vérifier si le fichier existe
         if (!Files.exists(csvFilePath)) {
             throw new IllegalStateException("Fichier 'backup_keys.csv' non trouvé dans le dossier 'users/'");
         }
 
-        // Lire toutes les lignes du fichier CSV
         List<String> lines = Files.readAllLines(csvFilePath);
         String keyString = lines.stream()
                 .filter(line -> line.startsWith(backupName + ","))
@@ -110,7 +107,6 @@ public class RestoreFileRequest extends Request {
                 .map(line -> line.split(",")[1])
                 .orElseThrow(() -> new IllegalStateException("Clé non trouvée pour la sauvegarde: " + backupName));
 
-        // Décoder et créer la clé secrète
         byte[] decodedKey = Base64.getDecoder().decode(keyString);
         SecretKey key = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
         return key;
