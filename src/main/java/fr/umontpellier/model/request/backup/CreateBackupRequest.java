@@ -1,48 +1,48 @@
-package fr.umontpellier.model.request;
+package fr.umontpellier.model.request.backup;
 
+import fr.umontpellier.logging.LoggingService;
 import fr.umontpellier.model.Backup;
 
 import javax.crypto.SecretKey;
 import java.io.*;
-import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import fr.umontpellier.model.encryption.EncryptionUtil;
+import fr.umontpellier.model.request.Request;
 
 
-public class CreateBackupRequest {
+public class CreateBackupRequest extends Request {
 
-    /**
-     * Crée un dossier pour l'utilisateur
-     *
-     * @param backupDetails les informations de la sauvegarde
-     * @param username le nom de l'utilisateur
-     */
-    public void handleBackup(Backup backupDetails, String username) {
-        System.out.println("Starting backup for user: " + username);
-        Path directoryPath = Paths.get(backupDetails.getDirectoryPath());
-        List<String> extensions = backupDetails.getFileExtensions();
+private final String username;
+
+private final Backup backup;
+
+    public CreateBackupRequest(Backup backup, String username) {
+        this.backup = backup;
+        this.username = username;
+    }
+
+    @Override
+    public void execute() {
+        LoggingService.getLogger().log("Starting backup for user: " + username);
+        Path directoryPath = Paths.get(this.backup.getDirectoryPath());
+        List<String> extensions = this.backup.getFileExtensions();
         Path backupRoot = Paths.get("./users", username);
-
         createDirectory(backupRoot);
-
         String backupName = createUnzippedDirectoryName(directoryPath);
         Path zipFilePath = createZipFilePath(directoryPath, backupRoot);
         zipDirectory(directoryPath, extensions, zipFilePath);
         unzipBackup(zipFilePath, backupRoot.resolve(backupName));
         Path backupDirectory = backupRoot.resolve(backupName);
         deleteFile(zipFilePath);
-
         try {
             SecretKey key = EncryptionUtil.generateKey();
             String keyString = Base64.getEncoder().encodeToString(key.getEncoded());
@@ -58,7 +58,7 @@ public class CreateBackupRequest {
             try {
                 Files.createDirectories(directory);
             } catch (IOException e) {
-                System.err.println("Error while creating directory: " + directory + " - " + e.getMessage());
+                LoggingService.getLogger().log("Error while creating directory: " + directory + " - " + e.getMessage());
             }
         }
     }
@@ -72,22 +72,21 @@ public class CreateBackupRequest {
 
     private void zipDirectory(Path directoryPath, List<String> extensions, Path zipFilePath) {
         try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(zipFilePath.toFile()))) {
-            Set<Path> addedDirs = new HashSet<>();
             Files.walkFileTree(directoryPath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     if (extensions.stream().anyMatch(ext -> file.toString().endsWith(ext))) {
-                        addToZip(file, directoryPath, zipOut);
+                        zipFile(file, directoryPath, zipOut);
                     }
                     return FileVisitResult.CONTINUE;
                 }
             });
         } catch (IOException e) {
-            System.err.println("Error while zipping directory: " + directoryPath + " - " + e.getMessage());
+            LoggingService.getLogger().log("Error while zipping directory: " + directoryPath + " - " + e.getMessage());
         }
     }
 
-    private void addToZip(Path file, Path basePath, ZipOutputStream zipOut) throws IOException {
+    private void zipFile(Path file, Path basePath, ZipOutputStream zipOut) throws IOException {
         ZipEntry zipEntry = new ZipEntry(basePath.relativize(file).toString());
         zipOut.putNextEntry(zipEntry);
         Files.copy(file, zipOut);
@@ -114,7 +113,7 @@ public class CreateBackupRequest {
                 zipInputStream.closeEntry();
             }
         } catch (IOException e) {
-            System.err.println("Erreur lors de la décompression du fichier zip: " + e.getMessage());
+            LoggingService.getLogger().log("Error while unzipping backup: " + e.getMessage());
         }
     }
 
@@ -132,7 +131,7 @@ public class CreateBackupRequest {
         try {
             Files.deleteIfExists(file);
         } catch (IOException e) {
-            System.err.println("Error while deleting file: " + file + " - " + e.getMessage());
+            LoggingService.getLogger().log("Error while deleting file: " + file + " - " + e.getMessage());
         }
     }
 
@@ -140,7 +139,7 @@ public class CreateBackupRequest {
         try {
             // Utiliser un chemin relatif pour pointer vers le dossier 'users/'
             Path csvFilePath = Paths.get("users/backup_keys.csv");
-            System.out.println("CSV file path: " + csvFilePath);
+            LoggingService.getLogger().log("CSV file path: " + csvFilePath);
 
             // Assurer que le dossier 'users/' existe
             Files.createDirectories(csvFilePath.getParent());
@@ -150,7 +149,7 @@ public class CreateBackupRequest {
                 writer.newLine();
             }
         } catch (Exception e) {
-            System.err.println("Erreur lors de l'écriture dans le fichier CSV: " + e.getMessage());
+            LoggingService.getLogger().log("Error while writing to CSV file: " + e.getMessage());
         }
     }
 }

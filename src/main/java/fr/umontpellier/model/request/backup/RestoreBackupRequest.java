@@ -1,6 +1,8 @@
-package fr.umontpellier.model.request;
+package fr.umontpellier.model.request.backup;
 
+import fr.umontpellier.logging.LoggingService;
 import fr.umontpellier.model.encryption.EncryptionUtil;
+import fr.umontpellier.model.request.Request;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -10,63 +12,34 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Base64;
 import java.util.List;
 
-public class RestoreBackupRequest {
+public class RestoreBackupRequest extends Request {
 
-    /**
-     * Restaure une sauvegarde complète
-     *
-     * @param username   le nom de l'utilisateur
-     * @param backupName le nom de la sauvegarde
-     * @param objectOut  le flux de sortie
-     */
-    public void fullRestore(String username, String backupName, ObjectOutputStream objectOut) throws Exception {
-        Path backupDirectory = Paths.get("./users", username, backupName);
-        if (Files.exists(backupDirectory)) {
-            SecretKey key = getKeyForBackup(backupName);
-            decryptFilesInDirectory(backupDirectory, key);
-            sendFilesInDirectory(backupDirectory, objectOut);
-            encryptFilesInDirectory(backupDirectory, key);
-            System.out.println("Starting full restore for user: " + username + " with name: " + backupName);
-        } else {
-            System.out.println("No backup found for user: " + username + " with name: " + backupName);
-        }
+private final String username;
+private final String backupName;
+private final ObjectOutputStream objectOut;
+
+    public RestoreBackupRequest(String username, String backupName, ObjectOutputStream objectOut) {
+        this.username = username;
+        this.backupName = backupName;
+        this.objectOut = objectOut;
     }
 
-    /**
-     * Restaure une sauvegarde partielle
-     *
-     * @param username       le nom de l'utilisateur
-     * @param filesToRestore la liste des fichiers à restaurer
-     * @param backupName     le nom de la sauvegarde
-     * @param objectOut      le flux de sortie
-     */
-    public void partialRestore(String username, List<String> filesToRestore, String backupName, ObjectOutputStream objectOut) throws Exception {
-        Path backupDirectory = Paths.get("./users", username, backupName);
-        SecretKey key = getKeyForBackup(backupName);
-
-        for (String filePath : filesToRestore) {
-            Path fileInBackup = backupDirectory.resolve(filePath);
-            if (Files.exists(fileInBackup)) {
-                Path decryptedFile = decryptIndividualFile(fileInBackup, key);
-                sendFile(decryptedFile, filePath, objectOut);
-                Files.deleteIfExists(decryptedFile);
+    @Override
+    public void execute() {
+        try {
+            Path backupDirectory = Paths.get("./users", this.username, this.backupName);
+            if (Files.exists(backupDirectory)) {
+                SecretKey key = getKeyForBackup(this.backupName);
+                decryptFilesInDirectory(backupDirectory, key);
+                sendFilesInDirectory(backupDirectory, this.objectOut);
+                encryptFilesInDirectory(backupDirectory, key);
+                LoggingService.getLogger().log("Starting full restore for user: " + this.username + " with name: " + this.backupName);
+            } else {
+                LoggingService.getLogger().log("No backup found for user: " + this.username + " with name: " + this.backupName);
             }
+        } catch (Exception e) {
+            LoggingService.getLogger().log("Error while restoring backup: " + e.getMessage());
         }
-        System.out.println("Starting partial restore for user: " + username + " with name: " + backupName);
-        objectOut.writeObject("RESTORE_COMPLETE");
-        objectOut.flush();
-    }
-
-    /**
-     * Déchiffre un fichier individuel
-     *
-     * @param file le fichier à déchiffrer
-     * @param key la clé de chiffrement
-     */
-    private Path decryptIndividualFile(Path file, SecretKey key) throws Exception {
-        Path tempDecryptedFile = Files.createTempFile("decrypted_", null);
-        EncryptionUtil.decryptFile(key, file.toFile(), tempDecryptedFile.toFile());
-        return tempDecryptedFile;
     }
 
     /**

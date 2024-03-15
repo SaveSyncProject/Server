@@ -1,21 +1,27 @@
 package fr.umontpellier;
 
-import fr.umontpellier.model.Backup;
-import fr.umontpellier.model.User;
-
-import javax.net.ssl.SSLSocket;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static fr.umontpellier.model.authentication.LDAPConnection.authenticateWithLDAP;
+import javax.net.ssl.SSLSocket;
 
-import fr.umontpellier.model.request.CreateBackupRequest;
-import fr.umontpellier.model.request.RestoreBackupRequest;
-import fr.umontpellier.model.request.DeleteBackupRequest;
-import fr.umontpellier.model.request.ReadBackupRequest;
+import fr.umontpellier.logging.LoggingService;
+import fr.umontpellier.model.Backup;
+import fr.umontpellier.model.User;
+import fr.umontpellier.model.authentication.LDAPConnection;
+import fr.umontpellier.model.request.backup.CreateBackupRequest;
+import fr.umontpellier.model.request.backup.DeleteBackupRequest;
+import fr.umontpellier.model.request.backup.ReadBackupRequest;
+import fr.umontpellier.model.request.backup.RestoreBackupRequest;
+import fr.umontpellier.model.request.file.DeleteFileRequest;
+import fr.umontpellier.model.request.file.ReadFileRequest;
+import fr.umontpellier.model.request.file.RestoreFileRequest;
 
 class ClientHandler extends Thread {
     private final SSLSocket clientSocket;
@@ -40,19 +46,19 @@ class ClientHandler extends Thread {
 
             while (attempts < 3) {
                 user = (User) objectIn.readObject();
-
-                if (user != null && authenticateWithLDAP(user.getUsername(), user.getPassword())) {
+                LDAPConnection ldapConnection = new LDAPConnection();
+                
+                if (user != null && ldapConnection.authenticateWithLDAP(user.getUsername(), user.getPassword())) {
                     synchronized (activeUsers) {
                         if (activeUsers.contains(user.getUsername())) {
                             objectOut.writeObject("User already connected.");
-                            System.out.println("Connection refused for user: " + user.getUsername());
+                            LoggingService.getLogger().log("Connection refused for user: " + user.getUsername());
                             return;
                         } else {
                             activeUsers.add(user.getUsername());
                         }
                     }
-
-                    System.out.println("Connection accepted for user: " + user.getUsername());
+                    LoggingService.getLogger().log("Connection accepted for user: " + user.getUsername());
                     objectOut.writeObject("OK");
 
                     createUserDirectory(user.getUsername());
@@ -61,54 +67,46 @@ class ClientHandler extends Thread {
                         String requestType = (String) objectIn.readObject();
 
                         switch (requestType) {
-                            case "LIST_BACKUPS_REQUEST" -> {
-                                ReadBackupRequest listBackups = new ReadBackupRequest();
-                                List<String> backupList = listBackups.listBackups(user.getUsername());
-                                objectOut.writeObject(backupList);
-                                objectOut.flush();
+                            case "READ_BACKUP" -> {
+                                ReadBackupRequest readBackupRequest = new ReadBackupRequest(objectOut, user.getUsername());
+                                readBackupRequest.execute();
                             }
-                            case "LIST_FILES_REQUEST" -> {
-                                ReadBackupRequest listFiles = new ReadBackupRequest();
+                            case "READ_FILE" -> {
                                 String backupName = (String) objectIn.readObject();
-                                List<String> files = listFiles.listFiles(user.getUsername(), backupName);
-                                objectOut.writeObject(files);
-                                objectOut.flush();
+                                ReadFileRequest readFileRequest = new ReadFileRequest(objectOut, user.getUsername(), backupName);
+                                readFileRequest.execute();
                             }
-                            case "SAVE_REQUEST" -> {
-                                Backup backupDetails = (Backup) objectIn.readObject();
-                                CreateBackupRequest createBackupRequest = new CreateBackupRequest();
-                                createBackupRequest.handleBackup(backupDetails, user.getUsername());
+                            case "CREATE_BACKUP" -> {
+                                Backup backup = (Backup) objectIn.readObject();
+                                CreateBackupRequest createBackupRequest = new CreateBackupRequest(backup, user.getUsername());
+                                createBackupRequest.execute();
                             }
-                            case "RESTORE_ALL_REQUEST" -> {
+                            case "RESTORE_BACKUP" -> {
                                 String backupName = (String) objectIn.readObject();
-                                RestoreBackupRequest restoreBackupRequest = new RestoreBackupRequest();
-                                restoreBackupRequest.fullRestore(user.getUsername(), backupName, objectOut);
+                                RestoreBackupRequest restoreBackupRequest = new RestoreBackupRequest(user.getUsername(), backupName, objectOut);
+                                restoreBackupRequest.execute();
                             }
-                            case "RESTORE_PARTIAL_REQUEST" -> {
+                            case "RESTORE_FILE" -> {
                                 String backupName = (String) objectIn.readObject(); // Recevoir le nom de la sauvegarde
                                 List<String> filesToRestore = (List<String>) objectIn.readObject();
-                                RestoreBackupRequest restorePartialRequest = new RestoreBackupRequest();
-                                restorePartialRequest.partialRestore(user.getUsername(), filesToRestore, backupName, objectOut);
+                                RestoreFileRequest restorePartialRequest = new RestoreFileRequest(user.getUsername(), backupName, filesToRestore , objectOut);
+                                restorePartialRequest.execute();
                             }
-                            case "DELETE_BACKUP_REQUEST" -> {
-                                String deleteBackupName = (String) objectIn.readObject();
-                                DeleteBackupRequest deleteRequestBackupRequest = new DeleteBackupRequest();
-                                boolean deleteSuccessful = deleteRequestBackupRequest.deleteBackup(user.getUsername(), deleteBackupName);
-                                objectOut.writeObject(deleteSuccessful ? "SUCCESS" : "ERROR");
-                                objectOut.flush();
+                            case "DELETE_BACKUP" -> {
+                                String backupName = (String) objectIn.readObject();
+                                DeleteBackupRequest deleteBackupRequest = new DeleteBackupRequest(user.getUsername(), backupName, objectOut);
+                                deleteBackupRequest.execute();
                             }
-                            case "DELETE_FILES_REQUEST" -> {
+                            case "DELETE_FILE" -> {
                                 List<String> filesToDelete = (List<String>) objectIn.readObject();
-                                DeleteBackupRequest deleteFilesRequest = new DeleteBackupRequest();
-                                boolean deleteFilesSuccessful = deleteFilesRequest.deleteFiles(user.getUsername(), filesToDelete);
-                                objectOut.writeObject(deleteFilesSuccessful ? "SUCCESS" : "ERROR");
-                                objectOut.flush();
+                                DeleteFileRequest deleteFileRequest = new DeleteFileRequest(user.getUsername(), filesToDelete, objectOut);
+                                deleteFileRequest.execute();
                             }
                             case "END_CONNECTION" -> {
-                                System.out.println("Client closed connection.");
+                                LoggingService.getLogger().log("Client closed connection.");
                                 return;
                             }
-                            default -> System.out.println("Unknown request type: " + requestType);
+                            default -> LoggingService.getLogger().log("Unknown request type: " + requestType);
                         }
                     }
 
@@ -120,11 +118,11 @@ class ClientHandler extends Thread {
 
             if (!isAuthenticated) {
                 objectOut.writeObject("Nombre maximum de tentatives atteint. Connexion fermée.");
-                System.out.println("Connection refused for user: " + user.getUsername());
+                LoggingService.getLogger().log("Connection refused for user: " + user.getUsername());
             }
 
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Error while handling client request: " + e.getMessage());
+            LoggingService.getLogger().log("Error while handling client request: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -132,13 +130,13 @@ class ClientHandler extends Thread {
                 try {
                     clientSocket.close();
                 } catch (IOException e) {
-                    System.err.println("Error while closing client socket: " + e.getMessage());
+                    LoggingService.getLogger().log("Error while closing client socket: " + e.getMessage());
                 }
             }
             if (user != null) {
                 synchronized (activeUsers) {
                     activeUsers.remove(user.getUsername());
-                    System.out.println("User disconnected: " + user.getUsername());
+                    LoggingService.getLogger().log("User disconnected: " + user.getUsername());
                 }
             }
         }
@@ -154,9 +152,9 @@ class ClientHandler extends Thread {
         if (!userDirectory.exists()) {
             boolean isCreated = userDirectory.mkdirs();
             if (isCreated) {
-                System.out.println("Folder created for user: " + username);
+                LoggingService.getLogger().log("User directory created for user: " + username);
             } else {
-                System.out.println("Error while creating folder for user: " + username);
+                LoggingService.getLogger().log("Error while creating user directory for user: " + username);
             }
         }
     }

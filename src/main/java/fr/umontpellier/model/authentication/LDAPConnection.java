@@ -23,7 +23,7 @@ public class LDAPConnection {
      * @param password mot de passe de l'utilisateur
      * @return true si l'authentification est réussie, false sinon
      */
-    public static boolean authenticateWithLDAP(String username, String password) {
+    public boolean authenticateWithLDAP(String username, String password) {
         try {
             com.unboundid.ldap.sdk.LDAPConnection connection = new com.unboundid.ldap.sdk.LDAPConnection(ldapHost, ldapPort);
             connection.bind("uid=" + username + ",ou=users,dc=example,dc=org", password);
