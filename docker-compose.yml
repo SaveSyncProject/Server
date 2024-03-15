@@ -34,6 +34,27 @@ services:
       - "636:636"
     domainname: "example.org"
     hostname: "ldap-server"
+    networks:
+      - ldap-network
+
+  savesync-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backup-server
+    depends_on:
+      - openldap
+    environment:
+      LDAP_HOST: openldap
+      LDAP_PORT: 389
+    volumes:
+      - ./data/backup-server:/app/data
+    ports:
+      - "1234:1234"
+      - "443:443"
+    networks:
+      - ldap-network
 
 networks:
   ldap-network:
+    driver: bridge
