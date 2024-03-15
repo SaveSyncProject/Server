@@ -21,9 +21,9 @@ import fr.umontpellier.model.request.Request;
 
 public class CreateBackupRequest extends Request {
 
-private final String username;
+    private final String username;
 
-private final Backup backup;
+    private final Backup backup;
 
     public CreateBackupRequest(Backup backup, String username) {
         this.backup = backup;

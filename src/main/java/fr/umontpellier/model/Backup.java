@@ -8,7 +8,7 @@ public class Backup implements Serializable {
     private List<String> fileExtensions;
 
     public Backup(String directoryPath, List<String> fileExtensions) {
-        this.directoryPath = directoryPath;
+        this.directoryPath = directoryPath.replace("\\", "/");
         this.fileExtensions = fileExtensions;
     }
 

@@ -13,7 +13,7 @@ public class ApplicationConfig {
     private static final String UI_HEADLESS_PROPERTY = "server.ui.headless";
     private static final String LDAP_HOST_PROPERTY = "ldap.host";
     private static final String LDAP_PORT_PROPERTY = "ldap.port";
-    private static final String DEFAULT_LDAP_HOST = "openldap";
+    private static final String DEFAULT_LDAP_HOST = "localhost";
     private static final int DEFAULT_LDAP_PORT = 389;
     private static final int DEFAULT_PORT = 1234;
 

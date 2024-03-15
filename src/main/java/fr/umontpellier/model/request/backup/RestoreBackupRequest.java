@@ -14,9 +14,9 @@ import java.util.List;
 
 public class RestoreBackupRequest extends Request {
 
-private final String username;
-private final String backupName;
-private final ObjectOutputStream objectOut;
+    private final String username;
+    private final String backupName;
+    private final ObjectOutputStream objectOut;
 
     public RestoreBackupRequest(String username, String backupName, ObjectOutputStream objectOut) {
         this.username = username;
