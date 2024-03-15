@@ -37,7 +37,7 @@ public class EncryptionUtil {
      */
     public static void processFolder(SecretKey key, File folder, boolean encrypt) throws Exception {
         if (!folder.isDirectory()) {
-            throw new IllegalArgumentException("Le paramètre doit être un dossier");
+            throw new IllegalArgumentException("The folder parameter must be a directory");
         }
 
         File[] files = folder.listFiles();
@@ -49,10 +49,10 @@ public class EncryptionUtil {
                     File tempFile = new File(file.getAbsolutePath() + ".tmp");
                     encryptFile(encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key, file, tempFile);
                     if (!file.delete()) {
-                        throw new Exception("Impossible de supprimer le fichier original: " + file.getName());
+                        throw new Exception("Failed to delete the file: " + file.getName());
                     }
                     if (!tempFile.renameTo(file)) {
-                        throw new Exception("Impossible de renommer le fichier temporaire: " + tempFile.getName());
+                        throw new Exception("Failed to rename the file: " + tempFile.getName());
                     }
                 }
             }
